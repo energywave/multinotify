@@ -1,0 +1,42 @@
+# -------------------------------------------------------------------------------------------------
+# Multinotify - Card per invio manuale messaggi ad Alexa
+# Reuisiti:
+#   - vertical-stack-in-card - https://github.com/ofekashery/vertical-stack-in-card
+# -------------------------------------------------------------------------------------------------
+# Istruzioni:
+#   - Clicca "Aggiungi Scheda" 
+#   - Scegli "Manuale" e incolla il codice di seguito:
+# -------------------------------------------------------------------------------------------------
+
+type: custom:vertical-stack-in-card
+title: Notifica ad Alexa
+cards:
+  - type: entities
+    entities:
+      - entity: input_text.multinotify_message
+      - entity: input_select.multinotify_dest
+      - entity: input_number.multinotify_volume
+  - type: conditional
+    conditions:
+      - entity: input_boolean.multinotify_executing
+        state: 'on'
+    card:
+      type: markdown
+      content: '<ha-alert alert-type="success">Stato: **IN ESECUZIONE**</ha-alert>'
+  - type: conditional
+    conditions:
+      - entity: input_boolean.multinotify_executing
+        state_not: 'on'
+    card:
+      type: markdown
+      content: '<ha-alert alert-type="info">Stato: **INATTIVO**</ha-alert>'
+  - show_name: true
+    show_icon: false
+    type: button
+    tap_action:
+      action: call-service
+      service: script.multinotify_button
+      data: {}
+      target: {}
+    name: RIPRODUCI
+    entity: script.multinotify

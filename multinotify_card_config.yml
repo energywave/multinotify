@@ -1,0 +1,43 @@
+# -------------------------------------------------------------------------------------------------
+# Multinotify - Card di configurazione
+# Reuisiti:
+#   - vertical-stack-in-card - https://github.com/ofekashery/vertical-stack-in-card
+# -------------------------------------------------------------------------------------------------
+# Istruzioni:
+#   - Clicca "Aggiungi Scheda" 
+#   - Scegli "Manuale" e incolla il codice di seguito:
+# -------------------------------------------------------------------------------------------------
+
+type: custom:vertical-stack-in-card
+title: Multinotify
+cards:
+  - type: conditional
+    conditions:
+      - entity: input_boolean.multinotify_executing
+        state: 'on'
+    card:
+      type: markdown
+      content: '<ha-alert alert-type="success">Stato: **IN ESECUZIONE**</ha-alert>'
+  - type: conditional
+    conditions:
+      - entity: input_boolean.multinotify_executing
+        state_not: 'on'
+    card:
+      type: markdown
+      content: '<ha-alert alert-type="info">Stato: **INATTIVO**</ha-alert>'
+  - type: entities
+    entities:
+      - entity: input_datetime.multinotify_dnd_start
+      - entity: input_datetime.multinotify_dnd_end
+  - type: markdown
+    title: Alexa
+    card_size: 5
+    content: |
+      Ultimo messaggio:
+      **{{states('input_text.multinotify_last_alexa_message')}}**
+  - type: markdown
+    title: TTS
+    card_size: 5
+    content: |
+      Ultimo messaggio:
+      **{{states('input_text.multinotify_last_tts_message')}}**
