@@ -1,0 +1,48 @@
+# -------------------------------------------------------------------------------------------------
+# Package Multinotify - Definizione gruppi per le notifiche e aiutanti usati dallo script
+# -------------------------------------------------------------------------------------------------
+
+group:
+  # Gruppo contenente tutti i device Echo presenti (necessario per utilizzare media_player.ovunque come target di multinotify)
+  all_alexa:
+    name: Tutti i device Echo
+    entities:
+      # TODO: modificare l'elenco delle entità del gruppo con i propri dispositivi Alexa
+      - media_player.pian_terreno
+      - media_player.primo_piano
+      - media_player.mansarda
+  # TODO: Definire un gruppo per ogni gruppo interno di Alexa. Per esempio al gruppo media_player.miogruppo dovrà corrispondere
+  #       il gruppo group.miogruppo contenente gli stessi dispositivi. Rimuovere l'esempio piani_superiori.
+  piani_superiori:
+    name: Device Echo dei piani superiori
+    entities:
+      - media_player.primo_piano
+      - media_player.mansarda
+
+notify:
+  # Gruppo notify.all_devices da utilizzare in multinotify per inviare una notifica a tutte le app
+  - name: all_devices
+    platform: group
+    services:
+      # TODO: modificare l'elenco dei servizi con i propri servizi di invio notifica alle app Home Assistant Companion collegate
+      - service: mobile_app_tel_henrik
+      - service: mobile_app_smartphone_antonella
+
+input_text:
+  multinotify_last_alexa_message:
+    name: Ultima notifica multinotify ad Alexa
+    icon: mdi:history
+  multinotify_last_tts_message:
+    name: Ultima notifica multinotify TTS
+    icon: mdi:history
+input_datetime:
+  multinotify_dnd_start:
+    name: Orario inizio DND
+    has_time: true
+    has_date: false
+    icon: mdi:clock-start
+  multinotify_dnd_end:
+    name: Orario fine DND
+    has_time: true
+    has_date: false
+    icon: mdi:clock-end

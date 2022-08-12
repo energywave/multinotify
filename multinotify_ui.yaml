@@ -1,0 +1,75 @@
+# -------------------------------------------------------------------------------------------------
+# Package Multinotify - Entità in appoggio per UI
+# -------------------------------------------------------------------------------------------------
+
+input_text:
+  multinotify_message:
+    name: Messaggio
+    icon: mdi:text-box-edit-outline
+input_select:
+  multinotify_dest:
+    name: Destinazione
+    icon: mdi:speaker
+    options:
+      - Pian terreno
+      - Primo piano
+      - Mansarda
+      - Ovunque
+input_number:
+  multinotify_volume:
+    name: Volume
+    icon: mdi:volume-high
+    initial: 6
+    min: 1
+    max: 10
+    step: 1
+input_boolean:
+  multinotify_executing:
+    name: Esecuzione annuncio
+    icon: mdi:account-voice
+    initial: false
+
+script:
+  multinotify_button:
+    alias: "Multinotify da UI"
+    description: "Permette di richiamare multinotify da UI. Usa gli input_* chiamati multinotify_*"
+    variables:
+      msg: "{{states('input_text.multinotify_message') | default('')}}"
+      dest: >-
+        {% set destinazioni =
+          [
+            {'text': 'Pian terreno',    'value': 'media_player.pian_terreno'},
+            {'text': 'Primo piano',     'value': 'media_player.primo_piano'},
+            {'text': 'Mansarda',        'value': 'media_player.mansarda'},
+            {'text': 'Ovunque',         'value': 'media_player.ovunque'}
+          ]
+        %}
+        {{destinazioni | selectattr('text', 'eq', states('input_select.multinotify_dest') | default('')) | map(attribute='value') | first | default('')}}
+    sequence:
+      - alias: "Destinazione corretta?"
+        condition: template
+        value_template: "{{ dest != '' }}"
+      - alias: "Messaggio presente?"
+        condition: template
+        value_template: "{{ msg != '' }}"
+
+      - alias: "In esecuzione"
+        service: input_boolean.turn_on
+        data:
+          entity_id: input_boolean.multinotify_executing
+      - alias: "Richiamo multinotify"
+        service: script.multinotify3
+        data:
+          message: "{{msg}}"
+          alexa_target: "{{dest}}"
+          alexa_volume: "{{(states('input_number.multinotify_volume') | float(60) / 10) | round(1)}}"
+          alexa_force: true
+      - alias: "Termine esecuzione"
+        service: input_boolean.turn_off
+        data:
+          entity_id: input_boolean.multinotify_executing
+      - alias: "Reset messaggio"
+        service: input_text.set_value
+        data:
+          entity_id: input_text.multinotify_message
+          value: ""
