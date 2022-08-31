@@ -3,9 +3,9 @@
 ![GitHub all releases](https://img.shields.io/github/downloads/energywave/multinotify/total)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/energywave/multinotify)
 # Multinotify by [@energywave](https://github.com/energywave) <!-- omit in toc -->
-This is a service that use nearly all notify services of **Home Assistant** to give you one consistent interface to use in all your automations and powercharges your notifications at the next level with the maximum ease of use possible.
+This is a service that use nearly all notify services of **Home Assistant** to give you one consistent interface to use in all your automations and powercharges your notifications at the next level with the maximum ease of use possible. Advanced features are easy to use here :)
 
-Multinotify can do it's magic using:
+## Services that multinotify can use:
 - [**Alexa**](https://github.com/custom-components/alexa_media_player) (pause music, set desired volume then set previous volume level and resume your music)
 - [**Google Home**](https://www.home-assistant.io/integrations/tts/) (set desired volume then set previous volume level **TODO**)
 - Other [**TTS**](https://www.home-assistant.io/integrations/tts/) (to be tested)
@@ -14,7 +14,6 @@ Multinotify can do it's magic using:
 - [**Pushover**](https://www.home-assistant.io/integrations/pushover/)
 - [**HTML5 push notifications**](https://www.home-assistant.io/integrations/html5/)
 
-You can attach ad image as well as a snapshot of a camera entity by just specifiying the entity_id of your camera. Multinotify will take care of different ways of doing that for all the services!
 
 ## Features
  - One call, multiple notification services, easy and compact
@@ -34,19 +33,22 @@ You can attach ad image as well as a snapshot of a camera entity by just specifi
  - **HTML5**: supports multiple services, title, message, icon, tag, critical, URL, actions and attachment
  - **ATTACHMENT**:
    - You can pass a **relative or absolute link to a media file** (image, video, audio file. Services limitations apply) to show that in the notification
-   - You can pass an **entity_id of a camera** you have in your Home Assistant to let Multinotify send the best snapshot it can to every involved service. For example: it will send a snapshot to iOS and, when you enlarge the notification, you'll see a live stream of the camera. For pushover it will automatically save a snapshot an attach. For services that supports that it will use camera proxy.
+   - You can pass an **entity_id of a camera** you have in your Home Assistant to let Multinotify send the best snapshot it can to every involved service. For example: it will send a snapshot to iOS and, when you enlarge the notification, you'll see a live stream of the camera. For pushover it will automatically save a snapshot an attach. For services that supports that it will use camera proxy. Don't bother about details, **just pass a camera entity_id and you'll receive a snapshot of that camera!**
 
 
 ## Table of Content <!-- omit in toc -->
 
-- Why this work
-- Dependencies
+- [Why this work](#why-this-work)
+- [Dependencies](#dependencies)
 - Installation
+  - [New installation](#new-installation)
+  - [Updating](#updating)
 - Changing package parameters
-  - Anchor parameters
+  - [Anchor parameters](#anchor-parameters)
   - iPhones list
   - Alexa groups
   - Companion app groups
+- [Create UI cards](#create-ui-cards)
 - How to use it
   - Parameters syntax
   - Alexa details
@@ -56,7 +58,49 @@ You can attach ad image as well as a snapshot of a camera entity by just specifi
   - HTML5 details
 - Examples
 
-**TO BE CONTINUED**
+## Why this work
+Notifications and announcments are a fundamental part of my smart home. So my first automations where full of redundant service calls to the app, to Alexa and eventually to other services.
+Same message was specified at least two times, at every call.
+A developer (as I am) is a lazy creature by definition. And multiple strings definitions where unacceptable. So multinotify was born.
+
+But then it became much more than that! Alexa announcments without a separate volume where terrible. I use to automatically play soft music at my entrance to my home, at a low volume. If an announcment arrive at that volume it's nearly impossible to understand it. So all the Alexa part where born.
+
+Then it became a challenge with myself to what could be done using yaml. And how to do things in an elegant way (like volume and play status backup/restore of every Alexa device involved without the need to define some helpers, I'm proud of that)
+
+Then it was adopted and I began to implement other services and keep the work as clean as possible, in my (very) compressed time.
+
+I wrote an [article about multinotify on my blog site](https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/), it's in Italian language but you can translate using Google Chrome. The multinotify described there is usually older than the one you can find here.
+
+## Dependencies
+ - [Alexa Media Player](https://github.com/custom-components/alexa_media_player) only if you want to play announcments on Alexa devices
+ - [Companion apps for Android or iOS](https://companion.home-assistant.io/) only if you want notifications to the apps.
+ - Specific `set_state` python script (needed only for Alexa and Google Home/TTS announcments):
+    - [File from @xannor repo](https://github.com/xannor/hass_py_set_state) or
+    
+    - [File from my website, with complete explanation in IT language](https://henriksozzi.it/2021/04/impostare-lo-stato-di-unentita-in-home-assistant/)
+  
+**WARNING**: check that your script is the correct one as many set_state you can find on the web doesn't allow to create entities like this specific one!
+ - If you want to send your camera snapshot to Pushover you'll have to create the folder /config/tmp and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
+ - If you want to send your camera snapshot to HTML5 you'll have to create the folder /config/www/cam and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
+
+## New installation
+If you install this package for the first time you'll have to check that you have a correctly configured packages folder as explained [here](https://www.home-assistant.io/docs/configuration/packages/#create-a-packages-folder).
+
+Then you'll have to create the `multinotify` folder inside your `packages` folder and copy there all the files in this repo or in the release zip file.
+
+The last step you'll have to do will be to set [parameters](#changing-package-parameters) and [create UI cards](#create-ui-cards).
+
+A restart of the core will be the last step to get you ready to use `multinotify`.
+
+## Updating
+**WORK IN PROGRESS**
+## Changing package parameters
+**WORK IN PROGRESS**
+### Anchor parameters
+**WORK IN PROGRESS**
+## Create UI cards
+**WORK IN PROGRESS**
+
 
 
 
