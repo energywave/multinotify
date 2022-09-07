@@ -148,12 +148,12 @@ There are two cards at the moment:
 ### multinotify_card.yml
 A card useful to play an announcment to Alexa/TTS devices. You'll have to modify the `multinotify_ui.yaml` file according to what devices you want to see in the list.
 
-![Multinotify card screenshot](multinotify_card.png)
+![Multinotify card screenshot](https://raw.githubusercontent.com/energywave/multinotify/main/.github/multinotify_card.PNG?raw=true)
 
 ### multinotify_config_card.yml
 A card to configure multinotify parameters. Most importantly the *Do Not Disturb* (or DND) time period.
 
-![Multinotify config card screenshot](multinotify_config_card.png)
+![Multinotify config card screenshot](https://github.com/energywave/multinotify/blob/main/.github/multinotify_config_card.PNG?raw=true)
 
 ## How to use it
 **WORK IN PROGRESS**
