@@ -2,7 +2,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/energywave/multinotify)
 ![GitHub all releases](https://img.shields.io/github/downloads/energywave/multinotify/total)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/energywave/multinotify)
-# Multinotify by [@energywave](https://github.com/energywave) <!-- omit in toc -->
+# Multinotify by [Henrik Sozzi](https://github.com/energywave) <!-- omit in toc -->
 This is a service that use nearly all notify services of **Home Assistant** to give you one consistent interface to use in all your automations and powercharges your notifications at the next level with the maximum ease of use possible. Advanced features are easy to use here :)
 
 ## Services that multinotify can use:
@@ -14,6 +14,7 @@ This is a service that use nearly all notify services of **Home Assistant** to g
 - [**Pushover**](https://www.home-assistant.io/integrations/pushover/)
 - [**HTML5 push notifications**](https://www.home-assistant.io/integrations/html5/)
 
+**PLEASE READ THE [CHANGELOG](/CHANGELOG.md) TO SEE WHAT'S CHANGED FROM YOUR INSTALLED VERSION BEFORE TO UPDATE!**
 
 ## Features
  - One call, multiple notification services, easy and compact
@@ -45,11 +46,9 @@ This is a service that use nearly all notify services of **Home Assistant** to g
   - [Updating](#updating)
 - Changing package parameters
   - [Anchor parameters](#anchor-parameters)
-  - iPhones list
-  - Alexa groups
-  - Companion app groups
+  - [Alexa, Google Home and apps groups](#alexa-google-home-and-apps-groups)
 - [Create UI cards](#create-ui-cards)
-- How to use it
+- [How to use it](#how-to-use-it)
   - Parameters syntax
   - Alexa details
   - Google Home and other TTS details
@@ -93,14 +92,68 @@ The last step you'll have to do will be to set [parameters](#changing-package-pa
 A restart of the core will be the last step to get you ready to use `multinotify`.
 
 ## Updating
-**WORK IN PROGRESS**
+Updating, at the moment, is a bit tricky as some parameters are set in the `multinotify_v3.yaml` itselft, at the beginning as anchors values.
+This means that you'll have to do something like this:
+  - Save a copy of your actual yaml files in the packages
+  - Update files in the repo or from the release zip, overwriting those in your multinotify folder
+  - Set again your anchor values at the beginning of the `multinotify_v3.yaml` file and groups in the `multinotify_groups_helpers.yaml`
+  - Restart your core (best!) or reload scripts, automations and eventually helpers if you're in a hurry.
+
 ## Changing package parameters
-**WORK IN PROGRESS**
+When you first install this package or after an update you have to set some parameters to fit your needs. It's a fast and easy operation, just follow next two chapters.
+
 ### Anchor parameters
-**WORK IN PROGRESS**
+In the `multinotify_v3.yaml` file you can see some anchor parameters at the beginning. This is how they looks like:
+```
+homeassistant:
+  customize:
+    package.node_anchors:
+      tts_default_service: &tts_default_service "tts.cloud_say"
+      default_volume: &default_volume 0.6
+      iphones: &iphones ""
+      iphones_critical_volume: &iphones_critical_volume 1.0
+```
+Here the definition of each parameters:
+ - **tts_default_service**: you can set "tts.cloud_say" to use Nabu Casa wonderful TTS voices or "tts.google_translate_say" to use google free service. What you set here will be the default if you'll not specify otherwise in script parameters.
+ - **default_volume**: this is the default volume for Alexa and TTS services like Google Home when you'll not specify otherwise in script parameters.
+ - **iphones**: this is a list of iphone notify services separated by comma. This will be used by the script to understand if a service is an Android or iOS app, to use correct syntax for each one. If you have notifications groups of omogeneus apps (iOS only) then specify them too.
+ Example value: `notify.my_iphone,notify.her_iphone,notify.all_iphones`
+ - **iphones_critical_volume**: the volume used for critical notification (iOS only) if not otherwise specified in script parameters.
+
+### Alexa, Google Home and apps groups
+After you eventually set anchor parameters you'll have to create some groups, if you want simplify sending notifications to groups of homogeneus devices.
+You'll do this operation by editing the `multinotify_groups_helpers.yaml`.
+
+Most important groups you'll have to create are Alexa speakers group you have defined in your Alexa app, in the devices tab, on the bottom of the page.
+**Each Alexa speaker group you defined in the Alexa app must have a corresponding group in Home Assistant with the same name**, so that multinotify can know what devices are inside them and process them correctly.
+
+Then, in the notify: seciont, you can create notify groups to send notifications to multiple apps.
+Please don't create notify groups with heterogeneus apps (Android / iOS) but only groups of Android only or iOS only.
+If you create iOS notify group please remember to add it to the [iphones anchor](#anchor-parameters), so that multinotify know that this specific group must use iOS syntax.
+
 ## Create UI cards
+With this package there are two provided cards for your convenience.
+First ensure that you have this module installed in your Home Assistant instance: [vertical-stack-in-card](https://github.com/ofekashery/vertical-stack-in-card).
+The most easy way for doing this is by using [HACS](https://hacs.xyz)
+
+To create provided cards in your UI please folloe this  super easy procedure. Just repeat the following steps for each file in the `UI` folder:
+  - Go in the view of the dashboard where you want to put the card on
+  - On the top right corner press the three dots icon, then "edit dashboard"
+  - On the bottom right of the screen press the *Add card* button
+  - From the card type dialog scroll to the bootom and select "manual"
+  - copy and paste the content of the yml file in the UI folder into the code on the dialog, then press "SAVE" button on the bottom right.
+
+There are two cards at the moment:
+
+### multinotify_card.yml
+A card useful to play an announcment to Alexa/TTS devices. You'll have to modify the `multinotify_ui.yaml` file according to what devices you want to see in the list.
+
+![Multinotify card screenshot](multinotify_card.png)
+
+### multinotify_config_card.yml
+A card to configure multinotify parameters. Most importantly the *Do Not Disturb* (or DND) time period.
+
+![Multinotify config card screenshot](multinotify_config_card.png)
+
+## How to use it
 **WORK IN PROGRESS**
-
-
-
-
