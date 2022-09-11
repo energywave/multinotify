@@ -37,27 +37,27 @@ This is a service that use nearly all notify services of **Home Assistant** to g
    - You can pass an **entity_id of a camera** you have in your Home Assistant to let Multinotify send the best snapshot it can to every involved service. For example: it will send a snapshot to iOS and, when you enlarge the notification, you'll see a live stream of the camera. For pushover it will automatically save a snapshot an attach. For services that supports that it will use camera proxy. Don't bother about details, **just pass a camera entity_id and you'll receive a snapshot of that camera!**
 
 
-## Table of Content <!-- omit in toc -->
+# Table of Content <!-- omit in toc -->
 
 - [Why this work](#why-this-work)
 - [Dependencies](#dependencies)
-- Installation
+- [Installation](#installation)
   - [New installation](#new-installation)
   - [Updating](#updating)
-- Changing package parameters
+- [Changing package parameters](#changing-package-parameters)
   - [Anchor parameters](#anchor-parameters)
   - [Alexa, Google Home and apps groups](#alexa-google-home-and-apps-groups)
 - [Create UI cards](#create-ui-cards)
 - [How to use it](#how-to-use-it)
-  - Parameters syntax
-  - Alexa details
-  - Google Home and other TTS details
-  - Companion app details
-  - Pushover details
-  - HTML5 details
-- Examples
+  - [Parameters syntax](#parameters-syntax)
+  - [Alexa details](#alexa-details)
+  - [Google Home and other TTS details](#google-home-and-other-tts-details)
+  - [Companion app details](#companion-app-details)
+  - [Pushover details](#pushover-details)
+  - [HTML5 details](#html5-details)
+- [Examples](#examples)
 
-## Why this work
+# Why this work
 Notifications and announcments are a fundamental part of my smart home. So my first automations where full of redundant service calls to the app, to Alexa and eventually to other services.
 Same message was specified at least two times, at every call.
 A developer (as I am) is a lazy creature by definition. And multiple strings definitions where unacceptable. So multinotify was born.
@@ -70,7 +70,7 @@ Then it was adopted and I began to implement other services and keep the work as
 
 I wrote an [article about multinotify on my blog site](https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/), it's in Italian language but you can translate using Google Chrome. The multinotify described there is usually older than the one you can find here.
 
-## Dependencies
+# Dependencies
  - [Alexa Media Player](https://github.com/custom-components/alexa_media_player) only if you want to play announcments on Alexa devices
  - [Companion apps for Android or iOS](https://companion.home-assistant.io/) only if you want notifications to the apps.
  - Specific `set_state` python script (needed only for Alexa and Google Home/TTS announcments):
@@ -82,6 +82,7 @@ I wrote an [article about multinotify on my blog site](https://henriksozzi.it/20
  - If you want to send your camera snapshot to Pushover you'll have to create the folder /config/tmp and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
  - If you want to send your camera snapshot to HTML5 you'll have to create the folder /config/www/cam and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
 
+# Installation
 ## New installation
 If you install this package for the first time you'll have to check that you have a correctly configured packages folder as explained [here](https://www.home-assistant.io/docs/configuration/packages/#create-a-packages-folder).
 
@@ -99,10 +100,10 @@ This means that you'll have to do something like this:
   - Set again your anchor values at the beginning of the `multinotify_v3.yaml` file and groups in the `multinotify_groups_helpers.yaml`
   - Restart your core (best!) or reload scripts, automations and eventually helpers if you're in a hurry.
 
-## Changing package parameters
+# Changing package parameters
 When you first install this package or after an update you have to set some parameters to fit your needs. It's a fast and easy operation, just follow next two chapters.
 
-### Anchor parameters
+## Anchor parameters
 In the `multinotify_v3.yaml` file you can see some anchor parameters at the beginning. This is how they looks like:
 ```
 homeassistant:
@@ -120,7 +121,7 @@ Here the definition of each parameters:
  Example value: `notify.my_iphone,notify.her_iphone,notify.all_iphones`
  - **iphones_critical_volume**: the volume used for critical notification (iOS only) if not otherwise specified in script parameters.
 
-### Alexa, Google Home and apps groups
+## Alexa, Google Home and apps groups
 After you eventually set anchor parameters you'll have to create some groups, if you want simplify sending notifications to groups of homogeneus devices.
 You'll do this operation by editing the `multinotify_groups_helpers.yaml`.
 
@@ -131,7 +132,7 @@ Then, in the notify: seciont, you can create notify groups to send notifications
 Please don't create notify groups with heterogeneus apps (Android / iOS) but only groups of Android only or iOS only.
 If you create iOS notify group please remember to add it to the [iphones anchor](#anchor-parameters), so that multinotify know that this specific group must use iOS syntax.
 
-## Create UI cards
+# Create UI cards
 With this package there are two provided cards for your convenience.
 First ensure that you have this module installed in your Home Assistant instance: [vertical-stack-in-card](https://github.com/ofekashery/vertical-stack-in-card).
 The most easy way for doing this is by using [HACS](https://hacs.xyz)
@@ -145,15 +146,67 @@ To create provided cards in your UI please folloe this  super easy procedure. Ju
 
 There are two cards at the moment:
 
-### multinotify_card.yml
+## multinotify_card.yml
 A card useful to play an announcment to Alexa/TTS devices. You'll have to modify the `multinotify_ui.yaml` file according to what devices you want to see in the list.
 
 ![Multinotify card screenshot](https://raw.githubusercontent.com/energywave/multinotify/main/.github/multinotify_card.PNG?raw=true)
 
-### multinotify_config_card.yml
+## multinotify_config_card.yml
 A card to configure multinotify parameters. Most importantly the *Do Not Disturb* (or DND) time period.
 
 ![Multinotify config card screenshot](https://github.com/energywave/multinotify/blob/main/.github/multinotify_config_card.PNG?raw=true)
 
-## How to use it
+# How to use it
+Let's see how to use multinotify by starting with all parameters definition and following with more details of every notification platform supported.
+## Parameters syntax
+You can call multinotify as a standard script with parameters like this:
+```
+- service: script.multinotify
+  data:
+    title: 'Il mio primo messaggio'
+    message: 'Ciao mondo!'
+    alexa_target: media_player.pian_terreno
+    notify_app: |
+      - notify.my_android
+      - notify.his_ios
+```
+But there are many optional parameters you can use! Please read the following table to have a complete documentation of them.
+
+| Param name     | Component  | Description |
+| :------------- | :--------- | :---------- |
+| `title`        | All        | The title of shown notifications
+| `message`      | All        | The message pronounced or shown in the body. **This is the only mandatory parameter**
+| `alexa_target` | Alexa      | Specify this to pronounce the message by Alexa. Please refer to [Alexa details](#alexa-details) section for possible values
+| `alexa_message`| Alexa      | Specify only if you want Alexa to pronounce something different from `message` parameter, for example when using [SSML tags](https://developer.amazon.com/en-US/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html)
+| `alexa_type`   | Alexa      | You can specify `announce` or `tts` to use a specific type of announce. If not specified `tts` will be used. (please refer to the [Alexa Media Player](https://github.com/custom-components/alexa_media_player/wiki/Configuration%3A-Notification-Component#functionality) documentation)
+| `alexa_volume` | Alexa      | If not specified the volume of the announce will be what you defined in `default_volume` [anchor parameter](#anchor-parameters). Otherwise specify here the volume of the announce using a value between 0.1 and 10.0
+| `alexa_force`  | Alexa      | If you specify `true` the announce will be played even if the time is in Do Not Disturb interval. If not specified or specified `false` the announce will be played only if time is not in Do Not Disturb time interval.
+| `tts_target`   | Google / TTS | Specify this to pronounce the message by Google Home or other TTS based devices. Please refer to [Google Home and other TTS details](#google-home-and-other-tts-details) section for possible values
+| `tts_message`  | Google / TTS | Specify only if you want Google Home or TTS device to pronounce something different from the `message` parameters.
+| `tts_volume`  | Google / TTS | If not specified the volume of the announce will be what you defined in `default_volume` [anchor parameter](#anchor-parameters). Otherwise specify here the volume of the announce using a value between 0.1 and 10.0
+| `tts_service`  | Google / TTS | If not specified the service defined in `tts_default_service` [anchor parameter](#anchor-parameters) will be used. Otherwise specify here `tts.cloud_say` if you have a [Nabu Casa](https://www.nabucasa.com/) active subscription or `tts.google_translate_say` otherwise.
+| `tts_force`  | Google / TTS | If you specify `true` the announce will be played even if the time is in Do Not Disturb interval. If not specified or specified `false` the announce will be played only if time is not in Do Not Disturb time interval.
+| `notify_app`  | Android / iOS App | Specify to send a notification to one or more companion app. Please refer to the [Companion app details](#companion-app-details) section for possible values.
+| `notify_pushover`  | Pushover | Specify to send a notification to a specific Pushover service. *Example: `notify_pushover: "notify.pushover"`*. More info on the [Pushover details](#pushover-details) section.
+| `notify_html5`  | HTML5 | Specify to send a notification to a registered HTML5 browser. PLease refer to the [HTML5 details](#html5-details) section for possible values.
+| `icon`  | Android / HTML5 | The name of the file to use as an icon on the notification. The file must exist in `/config/www/notify_NAME.png` (where `NAME` is what you specify in this parameter). If not specified a value will be inherited, in order of precedence, by `channel`, `group` or `"info"` constant.
+| `tag`  | Android / iOS / HTML5 | If you specify a value and you send another notification with same `tag` value the previous notification will be replaced by the new. You can even remove a notification by `tag` value.
+| `group`  | Android / iOS | If you specify a value all notification with same `group` value will be shown grouped on the phone. If you don't specify a value `channel` will be used for group or `"info"` if no `channel` specified.
+| `channel`  | Android | On Android this parameter will identify a different notification channel. For every channel, in app settings, you can set different sound and settings. If you don't specify a value `group` will be used or `"info"` if no `group` specified.
+| `subtitle`  | Android / iOS | Here you can specify a subtitle on iOS and a Subject on Android
+| `critical`  | Android / iOS / HTML5 | True to send a notification that will ignore the silence mode of your phone and will have maximum priority. On Android you'll have to properly configure the channel after first notification of this kind. False or don't specify to send normal notifications.
+| `critical_volume`  | iOS | Only on iOS you can specify a volume of `critical` notification sound. If you don't specify this and send a critical notification the iphones_critical_volume value specified in [anchor parameters](#anch]) will be used
+| `url`  | Android / iOS / Pushover / HTML5 | If you specify a value when the user will click the notification this url will be opened. To open a view of your dashboard use the value `"/lovelace/view_path"` where `lovelace` is the name of your dashboard and `view_path` is the path of your view. On Android you can open an app using `"app://<package name>"`, a "more info panel" of an entity with `"entityId:<entity_id>"` or notifycation history with `settings://notification_history`. More info [here](https://companion.home-assistant.io/docs/notifications/notifications-basic#opening-a-url).
+| `app_actions`  | Android / iOS / HTML5 | You can specify a list of actions that users can click and Home Assistant will receive the event. More info on the [Companion app details](#companion-app-details) section.
+| `attachment`  | Android / iOS / Pushover / HTML5 | Specify a relative or absolute url to attach an image, video or audio with the notification (every platform has it's own limits). If you specify the entity id of a camera a snapshot will be attached (in the proper way for each notification platform). More info on the [Companion app details](#companion-app-details) section.
+
+## Alexa details
+**WORK IN PROGRESS**
+## Google Home and other TTS details
+**WORK IN PROGRESS**
+## Companion app details
+**WORK IN PROGRESS**
+## Pushover details
+**WORK IN PROGRESS**
+## HTML5 details
 **WORK IN PROGRESS**

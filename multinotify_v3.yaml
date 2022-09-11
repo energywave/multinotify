@@ -17,6 +17,8 @@
 # Distributed with MIT license. PLease see LICENSE file for more details.
 # -------------------------------------------------------------------------------------------------
 
+# Please refer to the readme visible here: https://github.com/energywave/multinotify
+# The following text is yet to be translated to english.
 ####################################################################################
 ######################## REQUISITI, LEGGERE CON ATTENZIONE: ########################
 ####################################################################################
@@ -343,7 +345,7 @@ script:
         example: "/lovelace/cameras"
       app_actions:
         name: "Azioni notifica"
-        description: "Elenco di azioni per richiedere un input all'utente. Su android max 3, su iOS max 10. Ogni elemento deve avere action e title [ iOS / Android / HTML5 ]"
+        description: "Elenco di azioni per richiedere un input all'utente. Su android max 3, su iOS max 10. Ogni elemento deve avere action e title [ Android / iOS / HTML5 ]"
         selector:
           object:
         example: |

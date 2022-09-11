@@ -1,4 +1,6 @@
 # CHANGELOG
+Please read carefully when you upgrade what's new and if there is some usage change.
+Please note that before [3.6.1](#ver-361---07092022) version italian language was used.
 ## Ver. 1.0 - 30/03/2021
  - Prima versione pubblicata qui: https://henriksozzi.it/2021/03/script-con-parametri-opzionali-in-home-assistant/
 ## Ver. 2.0 - 25/11/2021
@@ -68,6 +70,7 @@
  - Reso funzionante attachment su pushover quando specificata una immagine o un'entity_id di una telecamera (fa snapshot e lo invia!)
  - Definitivamente risolti i problemi su iOS.
 ## Ver. 3.6.1 - 07/09/2022
+**ENGLISH WILL BE USED FROM NOW ON!!!**
  - The all_alexa group is now renamed to the same name you have in "speaker group" in your Alexa app. For Italian Alexa users it's "Ovunque". This is not anymore a special case but is treated as a normal speaker group.
  - Renamed tmp entities by removing "tts_" as a prefix (as multinotify v2 did)
  - Changed comments and documentation
