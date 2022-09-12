@@ -58,7 +58,7 @@ script:
         data:
           entity_id: input_boolean.multinotify_executing
       - alias: "Richiamo multinotify"
-        service: script.multinotify3
+        service: script.multinotify
         data:
           message: "{{msg}}"
           alexa_target: "{{dest}}"

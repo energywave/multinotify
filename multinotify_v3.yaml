@@ -52,7 +52,7 @@
 #        - media_player.Alexa1
 #        - media_player.Alexa2
 #  - Un gruppo Home Assistant di Alexa
-#      alexa_target: group.all_alexa
+#      alexa_target: group.ovunque
 #  - Un gruppo Alexa nativo (necessario che esista un gruppo Home Assistant con pari nome e contenente le Alexa facenti parte del gruppo)
 #      alexa_target: media_player.gruppo1
 
@@ -753,6 +753,6 @@ automation:
       - alias: "Imposta il volume al valore di default"
         service: media_player.volume_set
         target:
-          entity_id: group.all_alexa
+          entity_id: group.ovunque
         data:
           volume_level: "{{default_volume}}"
