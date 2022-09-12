@@ -55,6 +55,10 @@ This is a service that use nearly all notify services of **Home Assistant** to g
   - [Companion app details](#companion-app-details)
   - [Pushover details](#pushover-details)
   - [HTML5 details](#html5-details)
+  - [URL](#url)
+  - [Attachments and camera snapshot](#attachments-and-camera-snapshot)
+  - [Critical notifications](#critical-notifications)
+  - [App actions](#app-actions)
 - [Examples](#examples)
 
 # Why this work
@@ -201,12 +205,293 @@ But there are many optional parameters you can use! Please read the following ta
 | `attachment`  | Android / iOS / Pushover / HTML5 | Specify a relative or absolute url to attach an image, video or audio with the notification (every platform has it's own limits). If you specify the entity id of a camera a snapshot will be attached (in the proper way for each notification platform). More info on the [Companion app details](#companion-app-details) section.
 
 ## Alexa details
-**WORK IN PROGRESS**
+Multinotify simulate an announcment volume in Alexa. To do that the sequence is the following, when you play an announce with multinotify:
+- A backup of current volume and play status for every device object of the announce is done
+- The announce is played
+- Multinotify will wait for the time the announcment is being played
+- The volume of every involved device is restored and, if it was playing music, will resume at the point it was.
+For doing that it's important we know what devices are in groups you'll use. While groups has that information you can use speaker groups defined in the app that are available in Home Assistant as a media_player entity, like it is an Alexa device.
+For them no devices is available, that's why you'll have to define with a group of the same name the devices involved as explained in [Alexa, Google Home and apps groups](#alexa-google-home-and-apps-groups) section.
+
+The parameter you must set to use Alexa notification in multinotify is `alexa_target`. But you can use it in multiple ways, here all the possibilities with some examples.
+### Send to a single Alexa speaker
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  alexa_target: media_player.my_alexa_speaker
+```
+In this example you'll play the announcment only on the `my_alexa_speaker` device.
+
+### Send to a list of Alexa speakers
+In this example we'll play the announce to the three specified devices:
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  alexa_target:
+    - media_player.my_first_alexa
+    - media_player.my_second_alexa
+    - media_player.my_third_alexa
+```
+
+### Send to a Home Assistant defined group
+In this example we'll play the announce on all devices defined in the group.
+Please be aware that the announce will not be synchronized between devices this way.
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  alexa_target: group.my_alexa_devices
+```
+
+### Send to Alexa speakers group defined in the app
+In this example we'll play the announce in all devices in the `ovunque` group defined in the alexa app.
+The advantage of using those kind of groups is that, as long as you use `announce` (or not specify it) in `alexa_type`, the pronounciation of the announce will be synchronized between all devices.
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  alexa_target: media_player.ovunque
+```
+
+### Other information
+You can use the `alexa_message` param to specify a different text that Alexa will pronounce. It can be useful in the following cases:
+- Alexa isn't pronouncing something correctly. You can then write it differently only to be pronounced by Alexa.
+- You want to use [SSML](https://developer.amazon.com/en-US/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html) to give some life to Alexa announcments but you don't want to read SSML tags on your app notifications, right? ;)
+
+Let's visualize it with an example:
+```
+service: script.multinotify
+data:
+  message: The master is back home!
+  alexa_target: media_player.pian_terreno
+  alexa_message: <say-as interpret-as="interjection">abracadabra!</say-as> The master is back home!
+  notify_app: notify.my_phone
+```
+
+You can use `alexa_type: announce` to play synchronized announcments between all involved devices, but a "ding" will be played by Alexa before the announcment.
+Otherwise, if you use `alexa_type: tts` then you'll not hear anything before the announcment but involved devices will not be synchronized.
+
+Please note that if you send a normal notification like, for example, the "washmachine is done" then it's ok that it will not be played in DND times (as defined in the [card](#create-ui-cards)). But if you play something urgent like "Flooding in the bathroom!" then you want to specify `alexa_force: true` that will let the announce to play ignoring DND times.
+
 ## Google Home and other TTS details
-**WORK IN PROGRESS**
+Multinotify will set the volume for the announcment but is not yet able to restore the previous volume after the announcment due to a limitation of the Google Home platform. I'm working on implementing it, however, by doing some magic :)
+If Google devices are playing music they will stop it (that's by design, it cannot be done in a different way) but multinotify will not resume the music as it's **very** difficult and will need more code that what is present in multinotify itself. Yes I'm sorry to about that but that's a small sacrifice.
+
+Ok, to play announcment on Google Home / TTS devices when calling multinotify you should use the `tts_target` parameter, and you can do it in the following ways:
+
+### Send to a single Google Home / TTS device
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  tts_target: media_player.my_google_home_device
+```
+In this example you'll play the announcment only on the `my_google_home_device` device.
+
+### Send to a list of Google Home / TTS speakers
+In this example we'll play the announce to the three specified devices:
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  tts_target:
+    - media_player.my_first_google_home
+    - media_player.my_second_google_home
+    - media_player.my_third_google_home
+```
+
+### Send to a Home Assistant defined group
+In this example we'll play the announce on all devices defined in the group.
+```
+service: script.multinotify
+data:
+  message: Hey dude, this is a test!
+  tts_target: group.my_google_home_devices
+```
+
+### Other information
+As well as with Alexa you can specify a different message to be pronounces even with Google Home / TTS devices by using the `tts_message`.
+
+Please use the correct `tts_service` by specifying the most used one in the [anchor parameters](#anchor-parameters) or by overriding it by specifying the `tts_service`.
+The options you have are the folowing:
+- `tts.cloud_say`: you can use that only if you have an active [Nabu Casa](https://www.nabucasa.com/) subscription. This is the best choice, in my opinion. Very natural and understandable TTS!
+- `tts.google_translate_say`: this is a free service using Google Translate voice. Not bad but not as good as the previous one.
+
+Please note that if you send a normal notification like, for example, the "washmachine is done" then it's ok that it will not be played in DND times (as defined in the [card](#create-ui-cards)). But if you play something urgent like "Flooding in the bathroom!" then you want to specify `tts_force: true` that will let the announce to play ignoring DND times.
+
 ## Companion app details
-**WORK IN PROGRESS**
+If you want to send a notification to one or more app that have installed the Android or iOS Home Assistant Companion app you have to specify the `notify_app` parameter. You can use it in these ways:
+
+### Send to a single phone
+You can send the notification to a single phone by using this syntax:
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_app: notify.my_phone
+```
+
+### Send to a list of phones
+You can even specify a list of recipients for your notification.
+You can mix Android and iOS devices, the correct syntax will be automatically used for each of them (as long as you set what are your iOS notify services in the [anchor parameters](#anchor-parameters))
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_app:
+    - notify.my_android_phone
+    - notify.his_ios_phone
+```
+
+### Send to a group of phones
+If you define a group of phones in the `multinotify_groups_helpers.yaml` file then you can use it as a recipient. A notification will be sent to all members of that group.
+
+**Please note**: each notify group must be of the same type. Don't mix Android and iOS devices in a group!
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_app: notify.all_phones
+```
+
 ## Pushover details
-**WORK IN PROGRESS**
+To send a notification to a [connected pushover app](https://www.home-assistant.io/integrations/pushover/) you have to set the `notify_pushover` parameter.
+At the moment you can only specify the name of the pushover service to wich you want to send, like this:
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_pushover: notify.my_pushover
+```
+Multinotify will do it's best to use all the pushover features to use all specified parameters like `attachment`, `title`, `message`, `url` and `critical`.
 ## HTML5 details
-**WORK IN PROGRESS**
+To send notification to a configured browser by using the [HTML5 push notification service](https://www.home-assistant.io/integrations/html5/) you have to specify the `notify_html5` parameter.
+
+I'll describe all the ways you can specify the parameter:
+### Send to a single browser
+You can send the notification to a single registered browser by using this syntax:
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_html5: notify.my_pc
+```
+
+### Send to a list of browsers
+You can even specify a list of recipients for your notification.
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_html5:
+    - notify.my_home_pc
+    - notify.my_work_pc
+```
+
+### Send to a group of browsers
+If you define a group of html5 browsers in the `multinotify_groups_helpers.yaml` file then you can use it as a recipient. A notification will be sent to all members of that group.
+
+```
+service: script.multinotify
+data:
+  title: My notification title
+  message: This is the message I want you to read!
+  notify_app: notify.all_my_computers
+```
+## URL
+For notifications shown on phone or PC you can specify the `URL` parameter to open a specific website, app or home assistant page when the notification is clicked.
+These the possible values:
+- A relative URL to your Home Assistant instance. For example `/lovelace/my_view` to show *my_view* view in the *lovelace* dashboard.
+- A full URL like `https://henriksozzi.it`
+- (android only) open a specific app by using `app://<package name>`
+- (android only) open the "more info panel" of an entity by using `entityId:<entity_id>`. For example: `entityId:sun.sun`
+- (android only) open the notifications history by using `settings://notification_history`
+
+
+## Attachments and camera snapshot
+The `attachment` parameter is very powerful. You can specify an attachment of your notification in multiple ways. Multinotify will take care of the different syntax of every platform supported to achieve the result.
+Here the various possibilities:
+- An absolute url, for example: `https://henriksozzi.it/wp-content/uploads/2020/12/Henrik-Sozzi-small.jpg`. Not every platform supports every type of attachment. For example iOS accepts image (jpg, gif, png), video (mp4, mpg, avi), audio (aiff, wav, mp3) but Android only supports image and video and HTML5 and Pushover only supports image.
+- A relative url. For example: `/local/my_file.jpg` means you have to attach a file located in `/config/www/my_file.jpg`
+- A camera `entity_id`. For example `camera.living_room`. By doing that multinotify will automatically use best method for every platform involved to attach a snapshot of the camera, just as simple as that!
+On iOS, when you enlarge the notification, a live preview of the camera will be shown.
+
+## Critical notifications
+Critical notifications are notification that have more importance like an anti-theft alarm notification or a water leak sensor detected.
+These notifications ignore the dnd setting of the phone and will play the sound you've set, with maximum priority and importance.
+On HTML5 platform the notification will not go away until you interact with it.
+It's as easy as to set `critical: true`
+
+## App actions
+With app actions it's possible to set users possible response to the notification that, when pressed, can be processed with an automation on Home Assistant and do what you like.
+For example you can send a notification like `You've left the home but the garage door is open. Do you want me to close it?` and let the user choose between `Yes please` and `No, thank you`.
+Limitations to every platform apply, for example iOS support a maximum of 10 options while Android 3 and HTML5 2 options.
+For more info please read [Companion App dedicated page](https://companion.home-assistant.io/docs/notifications/actionable-notifications) and [HTML5 Push Notification actions](https://www.home-assistant.io/integrations/html5/#actions)
+
+This example shows what was described above:
+```
+service: script.multinotify
+data:
+  title: Security checks
+  message: "You've left the home but the garage door is open. Do you want me to close it?"
+  notify_app: notify.my_phone
+  app_actions:
+    - action: "YES"
+      icon: /local/yes.png
+      title: "Yes, please"
+    - action: "NO"
+      icon: /local/no.png
+      title: "No, thank you"
+```
+Please note that icon will work on Android and HTML5 in this way. iOS has a limitation of SF Symbols library described [here](https://companion.home-assistant.io/docs/notifications/actionable-notifications/#icon-values).
+
+To handle the press of an action by the user you'll have to create an automation like this (in this example the "YES" option) for Companion apps:
+```
+- trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: YES
+  action:
+    - service: cover.close_cover
+      target:
+        entity_id: cover.garage
+```
+And like this for HTML5:
+```
+- trigger:
+    - platform: event
+      event_type: html5_notification.clicked
+      event_data:
+        action: YES
+    action:
+      - service: cover.close_cover
+        target:
+          entity_id: cover.garage
+```
+
+You can combine them in one automation only:
+```
+- trigger:
+    - platform: event
+      event_type: mobile_app_notification_action
+      event_data:
+        action: YES
+    - platform: event
+      event_type: html5_notification.clicked
+      event_data:
+        action: YES
+    action:
+      - service: cover.close_cover
+        target:
+          entity_id: cover.garage
+```
+If the "NO" action will do nothing there is no need to handle it with an automation.
