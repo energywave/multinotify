@@ -1,57 +1,54 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Definizione gruppi per le notifiche e aiutanti usati dallo script
+# Package Multinotify - Groups and helpers definition used by multinotify script
 # -------------------------------------------------------------------------------------------------
 
 group:
-  # TODO: di seguito è necessario definire un gruppo Home Assistant per ogni gruppo di dispositivi Echo 
-  #       nella sezione "Gruppi di altoparlanti" visibili in fondo alla sezione "dispositivi" dell'app Alexa.
-  #       Rimuovi "piani_superiori" se hai il solo gruppo "ovunque" e null'altro o personalizzalo / aggiungi 
-  #       gli altri tuoi gruppi.
-  #       Questa sezione è fondamentale per indicare a multinotify quali dispositivi sono presenti in ogni 
-  #       gruppo di altoparlanti presenti in Alexa, così che se si utilizza la relativa entità media_player.<nome_gruppo>
-  #       multinotify sa quali dispositivi processare (purtroppo Alexa Media Player non ci da questa informazione quindi
-  #       dobbiamo inserirla noi attraverso i seguenti gruppi)
+  # TODO: you have to define your Home Assistant groups for every speaker group defined in the "Speakers group" at the
+  #       end of the page "devices" in the Alexa app.
+  #       Rename "ovunque" to your "all speakers" Alexa group name and eventually remove "piani_superiori" if you don't have other Alexa groups.
+  #       It's important that every group name must be equal to the corresponding media_player name.
+  #       For example: media_player.all_upstairs_alexa must have a corresponding group.all_upstairs_alexa with the same content.
+  #       This way multinotify can know who is in the speaker group (as Alexa Media Player don't tell us...)
   ovunque:
-    name: Tutti i device Echo
+    name: All Echo devices
     entities:
-      # TODO: modificare l'elenco delle entità del gruppo con i dispositivi Alexa presenti in questo gruppo
+      # TODO: modify the list with your own entity_id
       - media_player.pian_terreno
       - media_player.primo_piano
       - media_player.mansarda
   piani_superiori:
-    name: Device Echo dei piani superiori
+    name: Upstairs Echo devices
     entities:
       - media_player.primo_piano
       - media_player.mansarda
 
 notify:
-  # Gruppo notify.all_devices da utilizzare in multinotify per inviare una notifica a tutte le app
-  # Puoi aggiungere altri gruppi come meglio credi da usare in seguito. 
-  # IMPORTANTE: crea solo gruppi di dispositivi omogenei tra Android e iOS, NON creare gruppi misti.
-  # Se crei gruppi di dispositivi iOS ricorda di inserire anche essi nell'elenco iphones negli anchor
-  # in testa a multinotify_v3.yaml!
+  # notify.all_devices group to be used in multinotify to send a notification to all your connected apps.
+  # You can add other notify group as you want.
+  # IMPORTANT: please create only homogeneous groups between Android and iOS, DON'T create mixed groups (with some Andoird and some iOS)
+  # If you create iOS groups please remember to add them too to the anchro parameter iphones in the multinotify_v3.yaml file
   - name: all_devices
     platform: group
     services:
-      # TODO: modificare l'elenco dei servizi con i propri servizi di invio notifica alle app Home Assistant Companion collegate
+      # TODO: Edit the list of services to reflect your own services you want to send to
       - service: mobile_app_tel_henrik
       - service: mobile_app_smartphone_antonella
 
 input_text:
   multinotify_last_alexa_message:
-    name: Ultima notifica multinotify ad Alexa
+    name: Last multinotify Alexa announcment
     icon: mdi:history
   multinotify_last_tts_message:
-    name: Ultima notifica multinotify TTS
+    name: Last multinotify TTS announcment
     icon: mdi:history
 input_datetime:
   multinotify_dnd_start:
-    name: Orario inizio DND
+    name: DND time start
     has_time: true
     has_date: false
     icon: mdi:clock-start
   multinotify_dnd_end:
-    name: Orario fine DND
+    name: DND time end
     has_time: true
     has_date: false
     icon: mdi:clock-end

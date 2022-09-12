@@ -18,115 +18,80 @@
 # -------------------------------------------------------------------------------------------------
 
 # Please refer to the readme visible here: https://github.com/energywave/multinotify
-# The following text is yet to be translated to english.
 
-####################################################################################
-######################## REQUISITI, LEGGERE CON ATTENZIONE: ########################
-####################################################################################
-#  - Alexa Media Player (solo per notifiche Alexa): https://github.com/custom-components/alexa_media_player
-#  - App Companion collegate (solo per notifiche app): https://companion.home-assistant.io/
-#  - Script set_state specifico (solo per notifiche Alexa):
-#     - https://github.com/xannor/hass_py_set_state
-#     oppure
-#     - https://henriksozzi.it/2021/04/impostare-lo-stato-di-unentita-in-home-assistant/
-#     ATTENZIONE! Lo script sul sito henriksozzi.it è stato aggiornato il 10/1/2022 con la versione che permette
-#     la creazione di nuove entità! Se hai set_state da prima di questa data o da un'altro sito verifica che sia
-#     la versione corretta, altrimenti non funzionerà!
-#  - Se vuoi inviare snapshot delle telecamere a PushOver devi creare la cartella /config/tmp e assicurarti che sia
-#    inclusa in allowlist_external_dirs
-#  - Se vuoi inviare snapshot delle telecamere a HTML5 devi creare la cartella /config/www/cam e assicurarti che sia
-#    inclusa in allowlist_external_dirs
 
-# multinotify
-# ------------------------------------------
-# service: script.multinotify
-# data:
-#   message: Ciao! Questo messaggio sarà riprodotto ovunque
-#   alexa_target: media_player.ovunque
 
-# Nota: in alexa_target è possibile passare:
-#  - Una singola entità Alexa
-#      alexa_target: media_player
-#  - Un elenco di entità Alexa
-#      alexa_target:
-#        - media_player.Alexa1
-#        - media_player.Alexa2
-#  - Un gruppo Home Assistant di Alexa
-#      alexa_target: group.ovunque
-#  - Un gruppo Alexa nativo (necessario che esista un gruppo Home Assistant con pari nome e contenente le Alexa facenti parte del gruppo)
-#      alexa_target: media_player.gruppo1
+############################
+# ANCHOR PARAMETER TO SET: #
+############################
+# tts_default_service: set to "tts.cloud_say" to use Nabu Casa TTS (subscription needed) or "tts.google_translate_say" to use free Google Translate TTS
+# default_valume: Set here the default announc volume you want to use if not otherwise specified (range: 0.1 - 10.0)
+# iphones: set in this string exact service id corresponding to iOS devices, separated by comma (no spaces between!)
+#          If you have groups of iOS only please specify them too.
+#          DON'T use mixed Android / iOS groups!
+#          Example: "notify.jennys_iphone,notify.all_iphones"
+# iphones_critical_volume: set the volume you want to use for critical notifications on iOS devices if not otherwise specified
 
-####################################
-# PARAMETRI GENERALI DA IMPOSTARE: #
-####################################
-# tts_default_service: sostituire a "tts.cloud_say" la stringa "tts.google_translate_say" se si vuole usare il servizio di Google Translate
-# default_valume: sostituire a 0.6 il valore del volume di default che si vuole applicare all'avvio di HA e come fallback
-# iphones: indicare nella stringa i nomi esatti dei servizi notify corrispondenti a dispositivi iphone, separati da virgola.
-#          è necessario inserire, se li hai, anche i gruppi di SOLI iphone
-#          NON usare gruppi misti Android / iOS! In tal caso specifica singolarmente i singoli servizi in notify_app come indicato nell'esempio
-#          Esempio: "notify.iphone_di_mario, notify.tutti_gli_iphones"
-# iphones_critical_volume: indicare il volume che si desidera su iphone per le notifiche critiche alle quali non si specifica il relativo
-#                          parametro chiamando multinotify
 homeassistant:
   customize:
     package.node_anchors:
       tts_default_service: &tts_default_service "tts.cloud_say"
       default_volume: &default_volume 0.6
-      iphones: &iphones ""
+      iphones: &iphones "notify.mobile_app_iphone_di_erica"
       iphones_critical_volume: &iphones_critical_volume 1.0
 
-# -------------------------- NON MODIFICARE OLTRE QUESTA RIGA - DON'T EDIT AFTER THIS LINE --------------------------
+# -------------------------- DON'T EDIT AFTER THIS LINE --------------------------
 
 script:
-  # AD USO INTERNO. Viene chiamato per ogni entità media player PRIMA del messaggio di notifica
+  # This script is for internal use only. Don't call it directly!
   multinotify_tts_pre:
-    alias: "Gestione singolo media player PRE"
-    description: "Processa la singola entità media player nel ciclo di Multinotify prima dell'annuncio. Non è pensata per l'utilizzo da parte dell'utente"
+    alias: "Management of Alexa/TTS devices BEFORE the announcment"
+    description: "Process every involved media_player entity BEFORE the announcment. It will backup information of every media player and stop the music. DON'T CALL IT DIRECTLY"
     fields:
       target:
-        name: "Entità media player"
-        description: "Entità media player da processare"
+        name: "Media player entity"
+        description: "Media player entity to process"
       volume:
-        name: "Volume da impostare"
-        description: "Volume da impostare"
+        name: "Volume to set"
+        description: "Volume to set to this device"
     variables:
       default_volume: *default_volume
     sequence:
-      - alias: "Imposto prev volume"
+      - alias: "Set prev volume"
         service: python_script.set_state
         data:
           entity_id: "tmp.{{ target | regex_findall('\\.(\\w+)') | first }}_prev_volume"
           state: "{{state_attr(target, 'volume_level') | float(default_volume) | round(2)}}"
           was_playing: "{{states[target].state == 'playing'}}"
           allow_create: true
-      - alias: "Media player era in riproduzione?"
+      - alias: "Was media player playing?"
         choose:
           - conditions: "{{states[target].state == 'playing'}}"
             sequence:
-              - alias: "Metto in pausa il media player"
+              - alias: "Pause the media player"
                 service: media_player.media_pause
                 target:
                   entity_id: "{{target}}"
-      - alias: "Imposta volume desiderato"
+      - alias: "Set desired volume"
         service: media_player.volume_set
         target:
           entity_id: "{{target}}"
         data:
           volume_level: "{{volume | float(default_volume) | round(2)}}"
-      - alias: "Workaround per aggiornare sempre volume_level di Alexa"
+      - alias: "Workaround to ensure that Alexa Media Player has an updated volume_level"
         service: python_script.set_state
         data:
           entity_id: "{{target}}"
           volume_level: "{{volume | float(default_volume) | round(2)}}"
 
-  # AD USO INTERNO. Viene chiamato per ogni entità media player DOPO il messaggio di notifica
+  # This script is for internal use only. Don't call it directly!
   multinotify_tts_post:
-    alias: "Gestione singolo media player POST"
-    description: "Processa il singolo media player nel ciclo di Multinotify dopo l'annuncio. Non è pensata per l'utilizzo da parte dell'utente"
+    alias: "Management of Alexa/TTS devices AFTER the announcment"
+    description: "Process every involved media_player entity AFTER the announcment. It will restore information of every media player and restart the music. DON'T CALL IT DIRECTLY"
     fields:
       target:
-        name: "Entità media player"
-        description: "Entità media player da processare"
+        name: "Media player entity"
+        description: "Media player entity to process"
     variables:
       default_volume: *default_volume
     sequence:
@@ -134,69 +99,69 @@ script:
           object_id: "{{target | regex_findall('\\.(\\w+)') | first}}"
           prev_vol: "tmp.{{object_id}}_prev_volume"
           was_playing: "{{state_attr(prev_vol, 'was_playing')}}"
-      - alias: "Imposta volume precedente"
+      - alias: "Restore  previous volume"
         service: media_player.volume_set
         target:
           entity_id: "{{target}}"
         data:
           volume_level: "{{states(prev_vol) | float(default_volume) | round(2)}}"
-      - alias: "Workaround per aggiornare sempre volume_level di Alexa"
+      - alias: "Workaround to ensure that Alexa Media Player has an updated volume_level"
         service: python_script.set_state
         data:
           entity_id: "{{target}}"
           volume_level: "{{states(prev_vol)}}"
 
-      - alias: "Se era in riproduzione precedentemente ripristino la riproduzione"
+      - alias: "If the device was previously playing music we'll unpause it"
         choose:
           - conditions: "{{was_playing}}"
             sequence:
-              - alias: "Attesa per lasciare applicare il volume al media player"
+              - alias: "A delay to let Alexa Media Player apply the volume"
                 delay: 2
-              - alias: "Ripristina riproduzione"
+              - alias: "Unpause music play"
                 service: media_player.media_play
                 target:
                   entity_id: "{{target}}"
 
-  # Multinotify
+  # Multinotify script. Here is all the magic :)
   multinotify:
     alias: "Multinotify - Smart, rich and powerful notifications"
     description: "Send a notification to Alexa, Google Home, Android and iOS Companion App, Pushover and HTML5. With many enanchments!"
     mode: queued
     max: 10
     fields:
-      # Campi generici validi per tutti i tipi di notifica
+      # Generic fields valid for all notify kinds
       title:
-        name: "Titolo"
-        description: "Titolo della notifica [ Alexa / TTS / Android / iOS / PushOver / HTML5 ]"
+        name: "Title"
+        description: "Notification title [ Alexa / TTS / Android / iOS / PushOver / HTML5 ]"
         selector:
           text:
-        example: "Avviso importante"
+        example: "A message from home"
       message:
-        name: "Messaggio"
-        description: "Testo da notificare che verrà letto ed inviato come corpo della notifica [ Alexa / TTS / Android / iOS / PushOver / HTML5 ]"
+        name: "Message"
+        description: "Text to notify that will be read from media players and sent to phones/PC [ Alexa / TTS / Android / iOS / PushOver / HTML5 ]"
         selector:
           text:
-        example: "Un dispositivo non sta funzionando"
+        example: "A device stopped to work in the living room"
         required: true
 
       # Alexa
       alexa_target:
-        name: "Target Alexa"
-        description: "Dispositivo, elenco di dispositivi, gruppo Home Assistant, gruppo Alexa o entity speciale ovunque a cui inviare la notifica"
+        name: "Alexa target"
+        description: "Single Alexa entity_id, list of Alexa entity_ids, Home Assistant group or Alexa speaker group media player where you want to read the announcment"
         selector:
           entity:
             integration: alexa_media
             domain: media_player
-        example: "media_player.ovunque"
+        example: "media_player.first_floor_alexa"
       alexa_message:
-        name: "Messaggio Alexa (se diverso)"
-        description: "Testo che Alexa dovrà pronunciare, se differente da message. Se non specificato verrà usato message. [Alexa]"
+        name: "Alexa message (if different)"
+        description: "Text that Alexa must pronounce, if different from message parameter. You can use SSML here, for example. If not specified Alexa will read message parameter. [Alexa]"
         selector:
           text:
-        example: '<say-as interpret-as="interjection">yippii</say-as>. Questo verrebbe male nelle notifiche dell''app!'
+        example: '<say-as interpret-as="interjection">yippii</say-as>. That''s better to not show on phone notifications!'
       alexa_type:
-        name: "Tipo annuncio Alexa"
-        description: "Tipo annuncio su Alexa [Alexa]"
+        name: "Alexa announce type"
+        description: "Alexa announce type [Alexa]"
         example: "announce"
         selector:
           select:
@@ -204,8 +169,8 @@ script:
               - announce
               - tts
       alexa_volume:
-        name: "Volume Alexa"
-        description: "Volume che si desidera impostare per l'annuncio sui dispositivi Alexa indicati da alexa_target [Alexa]"
+        name: "Alexa volume"
+        description: "the volume you want Alexa to read the announcment, if different from the default volume set in anchors parameter. [Alexa]"
         example: "0.6"
         selector:
           number:
@@ -214,29 +179,29 @@ script:
             step: 0.1
             mode: "slider"
       alexa_force:
-        name: "Forza Alexa"
-        description: "True per forzare la notifica Alexa al di fuori dell'orario, False o non definita per riprodurre la notifica Alexa solo in orario consono [Alexa]"
+        name: "Alexa Force"
+        description: "True to force Alexa to read the announcement even if current time is in DND time frame. False or not specify this parameter to respect DND time frame. [Alexa]"
         selector:
           boolean:
         example: "false"
 
       # TTS (Google Home)
       tts_target:
-        name: "Target TTS"
-        description: "Dispositivo, elenco di dispositivi o gruppo di dispositivi media player che pronunceranno la notifica"
+        name: "TTS target"
+        description: "Google Home or TTS media player single entity, list of entities or media_player group that will play the announcment"
         selector:
           entity:
             domain: media_player
-        example: "media_player.ovunque"
+        example: "media_player.google_home_upstairs"
       tts_message:
-        name: "Messaggio TTS (se diverso)"
-        description: "Testo che i media player (Google Home) dovranno pronunciare, se differente da message. Se non specificato verrà usato message. [TTS]"
+        name: "TTS message (if different)"
+        description: "Text that Google Home or TTS devices will read, if different from message parameter. If not specified the message parameter will be pronounced. [TTS]"
         selector:
           text:
-        example: "Ciao, io sono Google Home"
+        example: "Hello world, I'm Google Home!"
       tts_volume:
-        name: "Volume TTS"
-        description: "Volume che si desidera impostare per l'annuncio sui dispositivi media player indicati da tts_target [TTS]"
+        name: "TTS volume"
+        description: "The volume you want to use to play Google Home or TTS devices announcment, if different from the default one set in anchor parameter. [TTS]"
         example: "0.6"
         selector:
           number:
@@ -245,8 +210,8 @@ script:
             step: 0.1
             mode: "slider"
       tts_service:
-        name: "Servizio TTS"
-        description: "Servizio da usare per la generazione del messaggio TTS [TTS]"
+        name: "TTS service"
+        description: "Service to use to generate audio from the message [TTS]"
         example: "tts.cloud_say"
         selector:
           select:
@@ -254,17 +219,17 @@ script:
               - tts.cloud_say
               - tts.google_translate_say
       tts_force:
-        name: "Forza TTS"
-        description: "True per forzare la notifica TTS al di fuori dell'orario, False o non definita per riprodurre la notifica TTS solo in orario consono [TTS]"
+        name: "TTS force"
+        description: "True to force Google Home or TTS to read the announcement even if current time is in DND time frame. False or not specify this parameter to respect DND time frame. [TTS]"
         selector:
           boolean:
         example: "false"
 
-      # --- NOTIfICHE ALLE VARIE APP ---
-      # App companion
+      # --- Notify to various apps ---
+      # Companion app
       notify_app:
-        name: "Servizi notifica app"
-        description: "Il nome del servizio di notifica app oppure l'elenco dei servizi di notifica app o ancora non compilare per non inviare notifiche all'app"
+        name: "App notify services"
+        description: "If you want to send a notification to phones specify the notify service id of the device you want to show notification or a list of notify service id."
         selector:
           object:
         example: |
@@ -273,62 +238,62 @@ script:
 
       # Pushover
       notify_pushover:
-        name: "Servizio notifica pushover"
-        description: "Il nome del servizio di notifica pushover o non passare alcun valore per non inviare notifica pushover"
+        name: "Pushover notify service"
+        description: "the service id of pushover notify service to use."
         selector:
           text:
         example: "notify.pushover"
 
       # HTML5
       notify_html5:
-        name: "Servizi notifica HTML5"
-        description: "Il nome del servizio di notifica HTML5  oppure l'elenco dei servizi di notifica HTML5 o ancora non compilare per non inviare notifiche HTML5"
+        name: "HTML5 notify services"
+        description: "If you want to show HTML5 notifications specify the service id of a registered HTML5 recipient or a list of HTML5 recipients"
         selector:
           object:
         example: |
-          - notify.html5_mio_pc
-          - notify.html5_altro_pc
+          - notify.html5_home_pc
+          - notify.html5_work_pc
 
-      # Parametri delle varie app (compatibilità in fondo alle descrizioni)
+      # Various app parameters
       icon:
-        name: "Icona"
-        description: 'nome del file (senza percorso, senza notify_ e senza estensione) che deve essere usato da mostrare nella notifica. nell''esempio "warning" diventerà "/local/notify_warning.png". Se non specificato userà channel, group o "info" [ Android / HTML5]'
+        name: "Icon"
+        description: 'The name of the file (without path, "notify_" prefix and extension) that will be used to be shown with notification. In the example "warning" will use the following file "/local/notify_warning.png" (that maps to the physical path of /config/www/notify_warning.png). If not specified it will be used, in order, channel or group or "info" [ Android / HTML5]'
         selector:
           text:
         example: "warning"
       tag:
         name: "Tag"
-        description: "Campo tag della notifica ad app e HTML5. Se impostato l'eventuale notifica sarà sostituita alla seguente con tag uguale e sarà possibile eliminarla [ Android / iOS / HTML5 ]"
+        description: "Tag field for the notification. If set the previous notification sent with the same tag will be replaced by this and you can even delete it [ Android / iOS / HTML5 ]"
         selector:
           text:
-        example: "fulmini"
+        example: "lightnings"
       group:
-        name: "Gruppo app"
-        description: "Stringa identificativa del gruppo di notifiche. Sul telefono le notifiche saranno raggruppate in base a questo valore. Se non specificato sarà usato channel o \"info\" [ Android / iOS ]"
+        name: "Group"
+        description: 'Identification of the group of notifications. On phones notifications will be grouped between notification with same group value. If not specified it will be used, in order, channel or "info" [ Android / iOS ]'
         selector:
           text:
         example: "alarm"
       channel:
-        name: "Canale app"
-        description: "Stringa identificativa del canale, ovvero il gruppo di notifiche con impostazioni a se stanti sul telefono. Se non specificato sarà usato group o \"info\". Se critical: true verrà ignorato.  [ Android ]"
+        name: "Channel"
+        description: 'Identification of the channel. On Android every channel can have his own sound and other notification settings. If not specified it will be used, in order, group o "info". If critical: true channel will be ignored.  [ Android ]'
         selector:
           text:
         example: "Generic"
       subtitle:
-        name: "Sottotitolo/Soggetto"
-        description: "Sottotitolo (iOS) o Soggetto (Android) della notifica  [ Android / iOS ]"
+        name: "Subtitle/subject"
+        description: "Subtitle (iOS) or Subject (Android) of the notification [ Android / iOS ]"
         selector:
           text:
-        example: "Avviso importante"
+        example: "Important warning"
       critical:
-        name: "Critical app"
-        description: 'impostare a "true" per inviare una notifica alla massima priorità. Sulle app suonerà indipendentemente dalla modalità di silenzioso del telefono (ad es. per antifurto), su HTML5 non farà scomparire la notifica dallo schermo. Se "false" o non specificata la notifica sarà invece normale e rispetterà la modalità del telefono (default: false) [ Android / iOS / HTML5 ] '
+        name: "Critical notification"
+        description: 'Set to "true" to send a high priority notification that will play the notification sound even if your phone is in do not disturb mode. (useful for anti-theft or technical alarms), on HTML5 the notification will not hide until you interact with it. If you specify "false" or not specify this parameter a normal notification will be sent (default: false) [ Android / iOS / HTML5 ] '
         selector:
           boolean:
         example: "true"
       critical_volume:
-        name: "Volume critical"
-        description: "Volume che si desidera impostare per le notifiche critical  [ iOS ]"
+        name: "Critical volume"
+        description: "The volume that you want to play, if different from anchro parameter, on a iOS critical notificaion [ iOS ]"
         example: "0.6"
         selector:
           number:
@@ -338,32 +303,33 @@ script:
             mode: "slider"
       url:
         name: "URL"
-        description: "Permette di indicare un url da aprire cliccando sulla notifica [Android / iOS / PushOver / HTML5 ]"
+        description: "You can specify an absolute URL to open when the user click on notification or a UI relative page or on Android an app to open or even more [Android / iOS / PushOver / HTML5 ]"
         selector:
           text:
         example: "/lovelace/cameras"
       app_actions:
-        name: "Azioni notifica"
-        description: "Elenco di azioni per richiedere un input all'utente. Su android max 3, su iOS max 10. Ogni elemento deve avere action e title [ Android / iOS / HTML5 ]"
+        name: "Actions"
+        description: "A list of actions that user can click on within the notification. On android you can see maximum 3 action, on iOS max 10, on HTML5 max 2. Every element must have at least action and title [ Android / iOS / HTML5 ]"
         selector:
           object:
         example: |
           - action: "YES"
             icon: /local/yes.png
-            title: "Si"
+            title: "Yes, understood"
           - action: "NO"
-            title: "No"
+            title: "No, please ignore"
           - action: "MAYBE"
-            title: "Forse"
+            title: "Maybe, I don't know"
       attachment:
-        name: "Allegato"
-        description: "Specificare un URL relativo o assoluto. Ogni piattaforma ha i suoi limiti che vanno verificati. Si può specificare l'entity_id di una telecamera [ Android / iOS / Pushover / HTML5 ]"
+        name: "Attachment"
+        description: "You can specify a relative or absolute uri of a resource to attach (every platform has its own limits) or the entity_id of a camera to automatically attach a snapshot of that camera [ Android / iOS / Pushover / HTML5 ]"
         selector:
           text:
         example: /media/local/file.jpg
-      # --- FINE PARAMETRI ---
+      # --- PARAMETERS END ---
 
     variables:
+      title_var: "{{title | default('Notify from home')}}"
       default_volume: *default_volume
       iphones: *iphones
       critical_var: "{{critical | default(false)}}"
@@ -451,11 +417,11 @@ script:
           {{notify_html5}}
         {% endif %}
     sequence:
-      # Preparazione
-      - alias: "Impostazione eventuali campi non inizializzati"
+      # Ensure DND are initialized
+      - alias: "Ensure DND are initialized"
         service: script.multinotify_dnd_init
 
-      # Sezione messaggio all'app
+      # Companion app
       - alias: "Notifica App"
         if: "{{notify_app is defined}}"
         then:
@@ -464,10 +430,10 @@ script:
             sequence:
               if: "{{repeat.item in iphones}}"
               then:
-                # Notifica dall'app companion ad iOS
+                # iOS companion app
                 service: "{{repeat.item}}"
                 data:
-                  title: "{{title | default('Notifica da casa')}}"
+                  title: "{{title_var}}"
                   message: "{{message}}"
                   data:
                     video: "{{attachment_video}}"
@@ -489,7 +455,7 @@ script:
                 # Notifica dall'app companion ad Android
                 service: "{{repeat.item}}"
                 data:
-                  title: "{{title | default('Notifica da casa')}}"
+                  title: "{{title_var}}"
                   message: "{{message}}"
                   data:
                     video: "{{attachment_video}}"
@@ -509,8 +475,8 @@ script:
                     clickAction: "{{url | default(None)}}"
                     actions: "{{app_actions}}"
 
-      # Sezione notifica Pushover
-      - alias: "Notifica Pushover"
+      # Pushover
+      - alias: "Pushover notify"
         if: "{{ notify_pushover is defined }}"
         then:  
           - if: "{{camera_entity is not none}}"
@@ -522,15 +488,15 @@ script:
                   filename: "{{snapshot_filename_pushover}}"
           - service: "{{notify_pushover}}"
             data:
-              title: "{{title | default('Notifica da casa')}}"
+              title: "{{title_var}}"
               message: "{{message}}"
               data:
                 attachment: "{{attachment_pushover}}"
                 url: "{{url | default(None)}}"
                 priority: "{{2 if critical_var else 0}}"
 
-      # Sezione HTML5
-      - alias: "Notifiche HTML"
+      # HTML5
+      - alias: "HTML5 notify"
         if: "{{notify_html5 is defined}}"
         then:
           - if: "{{camera_entity is not none}}"
@@ -547,7 +513,7 @@ script:
                 then:
                   service: "{{repeat.item}}"
                   data:
-                    title: "{{title | default('Notifica da casa')}}"
+                    title: "{{title_var}}"
                     message: "{{message}}"
                     data:
                       ttl: 0
@@ -561,7 +527,7 @@ script:
                 else:
                   service: "{{repeat.item}}"
                   data:
-                    title: "{{title | default('Notifica da casa')}}"
+                    title: "{{title_var}}"
                     message: "{{message}}"
                     data:
                       ttl: 0
@@ -572,14 +538,14 @@ script:
                       image: "{{attachment_image_html5}}"
                       icon: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
 
-      # Sezione messaggio Alexa
-      - alias: "Notifica Alexa"
+      # Alexa announcment
+      - alias: "Alexa notify"
         choose:
           - conditions:
-              - alias: "alexa_target è stato passato dal chiamante?"
+              - alias: "Is alexa_target specified from the caller?"
                 condition: template
                 value_template: "{{ alexa_target is defined }}"
-              - alias: "Orario diurno oppure alexa_force = true"
+              - alias: "If outside DND or alexa_force = true"
                 condition: or
                 conditions:
                   - condition: template
@@ -588,21 +554,21 @@ script:
                     after: input_datetime.multinotify_dnd_end
                     before: input_datetime.multinotify_dnd_start
             sequence:
-              # script.multinotify_alexa_pre: salvo volume precedente, imposto volume e metto in pausa eventuale musica su tutti i dispositivi Alexa coinvolti
+              # script.multinotify_alexa_pre: save previous volume, set announcment volume and pause music on all inherent devices
               - variables:
                   list: >
                     {% set object_id = alexa_target | regex_findall('\\.(\\w+)') | first %}
                     {% if not alexa_target is string %}
-                      {# Elenco di entità inline #}
+                      {# Inline list of entities #}
                       {{alexa_target | join(',')}}
                     {% elif alexa_target.startswith('group.') %}
-                      {# Gruppo di Echo definito in Home Assistant #}
+                      {# Home Assistant defined group #}
                       {{expand(states[alexa_target]) | join(',', attribute='entity_id')}}
                     {% elif alexa_target.startswith('media_player.') and states['group.' ~ object_id] != None %}
-                      {# Gruppo di Echo definito in Alexa (necessario un gruppo Home Assistant corrispondente con lo stesso nome!) #}
+                      {# Speaker group defined in Alexa app (a corresponding Home Assistant group with same name is needed!) #}
                       {{expand(states['group.' ~ object_id]) | join(',', attribute='entity_id')}}
                     {% elif alexa_target.startswith('media_player.') %}
-                      {# Singola entità Echo #}
+                      {# Single Alexa entity #}
                       {{alexa_target}}
                     {% endif %}
                   count: "{{list.split(',') | count}}"
@@ -616,7 +582,7 @@ script:
                         target: "{{entity_id}}"
                         volume: "{{alexa_volume | default(default_volume)}}"
 
-              # Notifica vera e propria
+              # Real notification
               - variables:
                   message: "{{alexa_message | default(message)}}"
                   pure_message: "{{message | regex_replace(find='<[^>]*>', replace='')}}"
@@ -626,16 +592,17 @@ script:
                   data:
                     type: "{{alexa_type | default('announce')}}"
                   target: "{{alexa_target}}"
+              # Wait for the time that Alexa will use to play the announcement
               - delay:
                   seconds: "{{(5 + (pure_message.count(', ') + pure_message.count('. ') + pure_message.count('! ') + pure_message.count('? ') + pure_message.count(': ') + pure_message.count('; ')) | float(0) * 0.35 + (pure_message | length) * 0.06) | round(default=0)}}"
-              - alias: "Imposta ultimo messaggio letto"
+              - alias: "Set last announcment read"
                 service: python_script.set_state
                 data:
                   entity_id: input_text.multinotify_last_alexa_message
                   state: "{{pure_message}}"
                   message: "{{message}}"
 
-              # script.multinotify_alexa_post: ripristino volume precedente e riproduzione musica, se era in corso, su tutti i dispositivi Alexa coinvolti
+              # script.multinotify_alexa_post: restore previous volume, unpause the music on all inherent devices
               - repeat:
                   while: "{{ repeat.index <= count }}"
                   sequence:
@@ -645,14 +612,14 @@ script:
                       data:
                         target: "{{entity_id}}"
 
-      # Sezione messaggio TTS
-      - alias: "Notifica TTS"
+      # Google Home / TTS
+      - alias: "Google Home / TTS notify"
         choose:
           - conditions:
-              - alias: "tts_target è stato passato dal chiamante?"
+              - alias: "tts_target was set from caller?"
                 condition: template
                 value_template: "{{ tts_target is defined }}"
-              - alias: "Orario diurno oppure tts_force = true"
+              - alias: "Outside DND time frame or tts_force = true"
                 condition: or
                 conditions:
                   - condition: template
@@ -661,18 +628,18 @@ script:
                     after: input_datetime.multinotify_dnd_end
                     before: input_datetime.multinotify_dnd_start
             sequence:
-              # script.multinotify_tts_pre: salvo volume precedente, imposto volume e metto in pausa eventuale musica su tutti i dispositivi coinvolti
+              # script.multinotify_tts_pre: save previous volume, set anouncement volume and pause playing music on all inherent devices
               - variables:
                   list: >
                     {% set object_id = tts_target | regex_findall('\\.(\\w+)') | first %}
                     {% if not tts_target is string %}
-                      {# Elenco di entità inline #}
+                      {# A list of inline entities #}
                       {{tts_target | join(',')}}
                     {% elif tts_target.startswith('group.') %}
-                      {# Gruppo di media player #}
+                      {# Media player group #}
                       {{expand(states[tts_target]) | join(',', attribute='entity_id')}}
                     {% elif tts_target.startswith('media_player.') %}
-                      {# Singola entità media player #}
+                      {# Single media player entity #}
                       {{tts_target}}
                     {% endif %}
                   count: "{{list.split(',') | count}}"
@@ -686,7 +653,7 @@ script:
                         target: "{{entity_id}}"
                         volume: "{{tts_volume | default(default_volume)}}"
 
-              # Notifica vera e propria
+              # Real notification
               - variables:
                   message: "{{tts_message | default(message)}}"
                   default_service: *tts_default_service
@@ -703,16 +670,17 @@ script:
                     {% endif%}
                   # options: >
                   #   {% if service == "tts.cloud_say" %}gender: female{%endif%}
+              # Wait for the time that Google Home will use to play the announcement
               - delay:
                   seconds: "{{(1 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float(0) * 0.35 + (message | length) * 0.06) | round(default=0)}}"
-              - alias: "Imposta ultimo messaggio letto"
+              - alias: "Set last message read"
                 service: python_script.set_state
                 data:
                   entity_id: input_text.multinotify_last_tts_message
                   state: "{{message}}"
                   message: "{{message}}"
 
-              # script.multinotify_tts_post: ripristino volume precedente e riproduzione musica, se era in corso, su tutti i dispositivi coinvolti
+              # script.multinotify_tts_post: restore previous volume on all inherent devices
               - repeat:
                   while: "{{ repeat.index <= count }}"
                   sequence:
@@ -723,8 +691,8 @@ script:
                         target: "{{entity_id}}"
 
   multinotify_dnd_init:
-    alias: "Inizializzazione DND per multinotify"
-    description: "Se gli orari DND non sono stati impostati mette il default per evitare che le notifiche non vadano mai per default"
+    alias: "Ensure DND initialization for multinotify"
+    description: "If DND times are not set then a default will be automatically set to avoid new users having DND from 00:00 to 00:00..."
     sequence:
       if: "{{is_state('input_datetime.multinotify_dnd_end', '00:00:00') and is_state('input_datetime.multinotify_dnd_start', '00:00:00')}}"
       then:
@@ -740,10 +708,10 @@ script:
             time: "23:00:00"
 
 automation:
-  # Risolve il bug di attributo volume_level non presente all'avvio di Home Assistant
+  # Workaround for the peculiarity of Alexa Media Player not setting the volume_level attribute at Home Assistant start
   # Ref: https://github.com/custom-components/alexa_media_player/issues/1394
   - id: 2d897264-e05c-46bd-ba23-772fbeeab7be
-    alias: "Alexa - Evento - Reimposta volume all'avvio di Home Assistant"
+    alias: "Alexa - Event - Set a default volume to all Alexa devices at HA start"
     trigger:
       - platform: homeassistant
         event: start

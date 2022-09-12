@@ -4,11 +4,11 @@
 
 input_text:
   multinotify_message:
-    name: Messaggio
+    name: Messagge
     icon: mdi:text-box-edit-outline
 input_select:
   multinotify_dest:
-    name: Destinazione
+    name: Destination
     icon: mdi:speaker
     options:
       - Pian terreno
@@ -25,14 +25,14 @@ input_number:
     step: 1
 input_boolean:
   multinotify_executing:
-    name: Esecuzione annuncio
+    name: Announce execution
     icon: mdi:account-voice
     initial: false
 
 script:
   multinotify_button:
-    alias: "Multinotify da UI"
-    description: "Permette di richiamare multinotify da UI. Usa gli input_* chiamati multinotify_*"
+    alias: "Multinotify from UI"
+    description: "Allows to call multinotify from UI. Uses the input_* called multinotify_*"
     variables:
       msg: "{{states('input_text.multinotify_message') | default('')}}"
       dest: >-
@@ -46,29 +46,29 @@ script:
         %}
         {{destinazioni | selectattr('text', 'eq', states('input_select.multinotify_dest') | default('')) | map(attribute='value') | first | default('')}}
     sequence:
-      - alias: "Destinazione corretta?"
+      - alias: "Correct destination?"
         condition: template
         value_template: "{{ dest != '' }}"
-      - alias: "Messaggio presente?"
+      - alias: "Message present?"
         condition: template
         value_template: "{{ msg != '' }}"
 
-      - alias: "In esecuzione"
+      - alias: "In execution"
         service: input_boolean.turn_on
         data:
           entity_id: input_boolean.multinotify_executing
-      - alias: "Richiamo multinotify"
+      - alias: "Multinotify calling"
         service: script.multinotify
         data:
           message: "{{msg}}"
           alexa_target: "{{dest}}"
           alexa_volume: "{{(states('input_number.multinotify_volume') | float(60) / 10) | round(1)}}"
           alexa_force: true
-      - alias: "Termine esecuzione"
+      - alias: "End of execution"
         service: input_boolean.turn_off
         data:
           entity_id: input_boolean.multinotify_executing
-      - alias: "Reset messaggio"
+      - alias: "Message reset"
         service: input_text.set_value
         data:
           entity_id: input_text.multinotify_message
