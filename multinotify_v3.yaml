@@ -1,8 +1,8 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.6 beta
+# Package Multinotify - Ver. 3.6.2
 # Descrizione: script multinotify per gestire l'invio di notifiche con un unico servizio alle seguenti piattaforme:
 #               - App companion (Android e iOS)
-#               - PushOver
+#               - Pushover
 #               - HTML5
 #               - Alexa (singole, gruppi, elenco)
 #               - Google Home (e altri riproduttore TTS)
