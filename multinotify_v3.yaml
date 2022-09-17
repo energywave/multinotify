@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.6.2
+# Package Multinotify - Ver. 3.7.0
 # Descrizione: script multinotify per gestire l'invio di notifiche con un unico servizio alle seguenti piattaforme:
 #               - App companion (Android e iOS)
 #               - Pushover
@@ -30,6 +30,7 @@
 #          If you have groups of iOS only please specify them too.
 #          DON'T use mixed Android / iOS groups!
 #          Example: "notify.jennys_iphone,notify.all_iphones"
+#          If you don't have iphones then set this as an empty string like ""
 # iphones_critical_volume: set the volume you want to use for critical notifications on iOS devices if not otherwise specified
 
 homeassistant:
@@ -235,6 +236,12 @@ script:
         example: |
           - notify.mio_android
           - notify.suo_ios
+      notify_app_tts:
+        name: "Play the message as TTS on Android"
+        description: "On Android phone it will play the message as Text To Speech. On other platform (iOS, Pushover, HTML5 this will not change the behavior as it's not supported) [Android]"
+        selector:
+          boolean:
+        example: "true"
 
       # Pushover
       notify_pushover:
@@ -253,6 +260,14 @@ script:
         example: |
           - notify.html5_home_pc
           - notify.html5_work_pc
+
+      # Persistent notification to Home Assistant
+      notify_ha:
+        name: "Send a persistent notification to Home ASsistant"
+        description: "If you set this to true then a persistent notification will be sent to Home Assistant (visible on the notification row in the left menu)"
+        selector:
+          boolean:
+        example: true
 
       # Various app parameters
       icon:
@@ -330,11 +345,13 @@ script:
 
     variables:
       title_var: "{{title | default('Notify from home')}}"
+      android_message_var: "{{'TTS' if (notify_app_tts | default(false)) else message}}"
+      android_tts: "{{message if (notify_app_tts | default(false)) else None}}"
       default_volume: *default_volume
       iphones: *iphones
       critical_var: "{{critical | default(false)}}"
-      channel_var: "{{(channel | default(group) | default('info')) if not critical_var else None}}"
-      media_stream_var: "{{'alarm_stream' if critical_var else None}}"
+      channel_var: "{{(channel | default(group) | default('info'))}}"
+      media_stream_var: "{{'alarm_stream_max' if critical_var else None}}"
       iphones_critical_volume: *iphones_critical_volume
       attachment_video: >
         {% if attachment is defined and attachment.endswith((".mp4", ".mpg", ".mpeg", ".avi")) %}
@@ -456,7 +473,7 @@ script:
                 service: "{{repeat.item}}"
                 data:
                   title: "{{title_var}}"
-                  message: "{{message}}"
+                  message: "{{android_message_var}}"
                   data:
                     video: "{{attachment_video}}"
                     image: "{{attachment_image_android}}"
@@ -473,6 +490,7 @@ script:
                     persistent: "{{critical_var}}"
                     subject: "{{subtitle | default(None)}}"
                     clickAction: "{{url | default(None)}}"
+                    tts_text: "{{android_tts}}"
                     actions: "{{app_actions}}"
 
       # Pushover
@@ -537,6 +555,31 @@ script:
                       requireInteraction: "{{(critical == true)}}"
                       image: "{{attachment_image_html5}}"
                       icon: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
+
+      # persistent notification to Home Assistant
+      - alias: "persistent notification to Home Assistant"
+        choose:
+          # message: "clear_notification". Persistent notification will be dismissed
+          - conditions: "{{(notify_ha | default(false)) and message == 'clear_notification'}}"
+            sequence:
+              - service: persistent_notification.dismiss
+                data:
+                  notification_id: "{{tag if tag is defined else None}}"
+          # A normal persistent notification to Home Assistant with notification_id (a working default value was not found for notification_id!)
+          - conditions: "{{(notify_ha | default(false)) and tag is defined}}"
+            sequence:
+              - service: persistent_notification.create
+                data:
+                  message: "{{message}}"
+                  title: "{{title_var}}"
+                  notification_id: "{{tag}}"
+          # A normal persistent notification to Home Assistant without notification_id
+          - conditions: "{{notify_ha | default(false)}}"
+            sequence:
+              - service: persistent_notification.create
+                data:
+                  message: "{{message}}"
+                  title: "{{title_var}}"
 
       # Alexa announcment
       - alias: "Alexa notify"

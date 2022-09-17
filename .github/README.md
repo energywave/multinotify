@@ -17,19 +17,19 @@ This is a service that use nearly all notify services of **Home Assistant** to g
 **PLEASE READ THE [CHANGELOG](/CHANGELOG.md) TO SEE WHAT'S CHANGED FROM YOUR INSTALLED VERSION BEFORE TO UPDATE!**
 
 ## Features
- - One call, multiple notification services, easy and compact
- - You can specifiy different messages for Alexa or Google Home/TTS, if you want (so that you can use SSML markup, for example)
+ - One call, multiple notification services, easy, compact and coherent.
+ - You can specifiy different messages for Alexa or Google Home/TTS, if you want (so that you can leverage SSML markup just for Alexa announcement, for example)
  - **ALEXA**: you can specify a single device, an Alexa multi room group of devices, an Home Assistant group of devices or a list of single devices as a target.
  - **ALEXA**: notification volume you choose, your previous volume for every device will be restored
  - **ALEXA**: music will be paused and automatically resumed after the announce
  - **ALEXA**: some volume bad behavior of Alexa Media Player are mitigated
  - **ALEXA**: the service will wait during announce so that, if used in a sequence, the next command will be executed AFTER the announce has been terminated. You can say, for example "Now I'll raise your shutters" and only then your shutters move.
- - **ALEXA**/**Google Home**/**TTS**: you can select a Do Not Disturb period, by default from 11:00 pm to 9:00 am. In this period no announce will be played if not specified the "force" parameter
+ - **ALEXA**/**Google Home**/**TTS**: you can select a *Do Not Disturb* period, by default from 11:00 pm to 9:00 am. In this period no announce will be played if not specified the "force" parameter
  - **ALEXA**: you can choose between announce and tts service
  - **Google Home**/**TTS**: you can choose between tts.cloud_say (Nabu Casa) and tts.google_translate_say
  - **ALEXA**/**Google Home**/**TTS**: you can set a default announce volume but you can specify a different volume when you call multinotify, if you want
  - **APP**: Android app and iOS app have different syntaxes. Multinotify will take care of that for you. You'll have only to use multinotify, ignoring that
- - **APP**: you can specify (optionally) tag, group, channel, subtitle/subject, critical (to send an important notification that ignore phone silence mode), critical volume (iOS only), URL to open when you click, actions (max 3 on android, max 10 on iOS), attachment
+ - **APP**: you can specify (optionally) tag, group, channel, subtitle/subject, critical (to send an important notification that ignore phone *Do Not Disturb* mode), critical volume (iOS only), URL to open when you click, actions (max 3 on android, max 10 on iOS), attachment. On Android you can even play a TTS message.
  - **PUSHOVER**: supports multiple services, title, message, URL and attachment
  - **HTML5**: supports multiple services, title, message, icon, tag, critical, URL, actions and attachment
  - **ATTACHMENT**:
@@ -76,7 +76,7 @@ I wrote an [article about multinotify on my blog site](https://henriksozzi.it/20
 
 # Dependencies
  - [Alexa Media Player](https://github.com/custom-components/alexa_media_player) only if you want to play announcments on Alexa devices
- - [Companion apps for Android or iOS](https://companion.home-assistant.io/) only if you want notifications to the apps.
+ - [Companion apps for Android or iOS](https://companion.home-assistant.io/) only if you want notifications to the apps. (note: **app ver. 2022.8 or later required for Android**)
  - Specific `set_state` python script (needed only for Alexa and Google Home/TTS announcments):
     - [File from @xannor repo](https://github.com/xannor/hass_py_set_state) or
     
@@ -89,6 +89,8 @@ I wrote an [article about multinotify on my blog site](https://henriksozzi.it/20
 # Installation
 ## New installation
 If you install this package for the first time you'll have to check that you have a correctly configured packages folder as explained [here](https://www.home-assistant.io/docs/configuration/packages/#create-a-packages-folder).
+
+Please make sure you have all needed [Dependencies](#dependencies).
 
 Then you'll have to create the `multinotify` folder inside your `packages` folder and copy there all the files in this repo or in the release zip file.
 
@@ -121,8 +123,8 @@ homeassistant:
 Here the definition of each parameters:
  - **tts_default_service**: you can set "tts.cloud_say" to use Nabu Casa wonderful TTS voices or "tts.google_translate_say" to use google free service. What you set here will be the default if you'll not specify otherwise in script parameters.
  - **default_volume**: this is the default volume for Alexa and TTS services like Google Home when you'll not specify otherwise in script parameters.
- - **iphones**: this is a list of iphone notify services separated by comma. This will be used by the script to understand if a service is an Android or iOS app, to use correct syntax for each one. If you have notifications groups of omogeneus apps (iOS only) then specify them too.
- Example value: `notify.my_iphone,notify.her_iphone,notify.all_iphones`
+ - **iphones**: this is a list of iphone notify services separated by comma. This will be used by the script to understand if a service is an Android or iOS app, to use correct syntax for each one. If you have notifications groups of homogeneous apps (iOS only) then specify them too.
+ Example value: `notify.my_iphone,notify.her_iphone,notify.all_iphones`. If you don't have iphones then simply specify an empty string `""`
  - **iphones_critical_volume**: the volume used for critical notification (iOS only) if not otherwise specified in script parameters.
 
 ## Alexa, Google Home and apps groups
@@ -179,7 +181,7 @@ But there are many optional parameters you can use! Please read the following ta
 | Param name     | Component  | Description |
 | :------------- | :--------- | :---------- |
 | `title`        | All        | The title of shown notifications
-| `message`      | All        | The message pronounced or shown in the body. **This is the only mandatory parameter**
+| `message`      | All        | The message pronounced or shown in the body. You can set the special value `"clear_notification"` to remove notification with given tag on Android, iOS and Persistent notifications. **This is the only mandatory parameter**
 | `alexa_target` | Alexa      | Specify this to pronounce the message by Alexa. Please refer to [Alexa details](#alexa-details) section for possible values
 | `alexa_message`| Alexa      | Specify only if you want Alexa to pronounce something different from `message` parameter, for example when using [SSML tags](https://developer.amazon.com/en-US/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html)
 | `alexa_type`   | Alexa      | You can specify `announce` or `tts` to use a specific type of announce. If not specified `tts` will be used. (please refer to the [Alexa Media Player](https://github.com/custom-components/alexa_media_player/wiki/Configuration%3A-Notification-Component#functionality) documentation)
@@ -191,14 +193,16 @@ But there are many optional parameters you can use! Please read the following ta
 | `tts_service`  | Google / TTS | If not specified the service defined in `tts_default_service` [anchor parameter](#anchor-parameters) will be used. Otherwise specify here `tts.cloud_say` if you have a [Nabu Casa](https://www.nabucasa.com/) active subscription or `tts.google_translate_say` otherwise.
 | `tts_force`  | Google / TTS | If you specify `true` the announce will be played even if the time is in Do Not Disturb interval. If not specified or specified `false` the announce will be played only if time is not in Do Not Disturb time interval.
 | `notify_app`  | Android / iOS App | Specify to send a notification to one or more companion app. Please refer to the [Companion app details](#companion-app-details) section for possible values.
+| `notify_app_tts` | Android | If you set to true on Android app, the message will be pronounced with TTS instead of showing a notification. If you want to pronounce at max volume ignoring Do Not Disturb use with `critical: true`. |
 | `notify_pushover`  | Pushover | Specify to send a notification to a specific Pushover service. *Example: `notify_pushover: "notify.pushover"`*. More info on the [Pushover details](#pushover-details) section.
 | `notify_html5`  | HTML5 | Specify to send a notification to a registered HTML5 browser. PLease refer to the [HTML5 details](#html5-details) section for possible values.
+| `notify_ha` | Persistent | Set to `true` if you want to send a [persistent notification](https://www.home-assistant.io/integrations/persistent_notification/) to Home Assistant.
 | `icon`  | Android / HTML5 | The name of the file to use as an icon on the notification. The file must exist in `/config/www/notify_NAME.png` (where `NAME` is what you specify in this parameter). If not specified a value will be inherited, in order of precedence, by `channel`, `group` or `"info"` constant.
-| `tag`  | Android / iOS / HTML5 | If you specify a value and you send another notification with same `tag` value the previous notification will be replaced by the new. You can even remove a notification by `tag` value.
+| `tag`  | Android / iOS / HTML5 / Persistent | If you specify a value and you send another notification with same `tag` value the previous notification will be replaced by the new. You can then remove a notification by sending a notification with special message `clear_notification` and desired `tag` to remove.
 | `group`  | Android / iOS | If you specify a value all notification with same `group` value will be shown grouped on the phone. If you don't specify a value `channel` will be used for group or `"info"` if no `channel` specified.
-| `channel`  | Android | On Android this parameter will identify a different notification channel. For every channel, in app settings, you can set different sound and settings. If you don't specify a value `group` will be used or `"info"` if no `group` specified.
+| `channel`  | Android | On Android this parameter will identify a different notification channel. For every channel, in app settings, you can set different sound and settings. If you don't specify a value then `group` will be used or `"info"` if no `group` specified. Please read about channel and critical in [Companion App Details](#companion-app-details)
 | `subtitle`  | Android / iOS | Here you can specify a subtitle on iOS and a Subject on Android
-| `critical`  | Android / iOS / HTML5 | True to send a notification that will ignore the silence mode of your phone and will have maximum priority. On Android you'll have to properly configure the channel after first notification of this kind. False or don't specify to send normal notifications.
+| `critical`  | Android / iOS / HTML5 | True to send a notification that will ignore the "Do Not Disturb" mode of your phone and will have maximum priority. Please read about critical and channel in [Companion app details](#companion-app-details).
 | `critical_volume`  | iOS | Only on iOS you can specify a volume of `critical` notification sound. If you don't specify this and send a critical notification the iphones_critical_volume value specified in [anchor parameters](#anch]) will be used
 | `url`  | Android / iOS / Pushover / HTML5 | If you specify a value when the user will click the notification this url will be opened. To open a view of your dashboard use the value `"/lovelace/view_path"` where `lovelace` is the name of your dashboard and `view_path` is the path of your view. On Android you can open an app using `"app://<package name>"`, a "more info panel" of an entity with `"entityId:<entity_id>"` or notifycation history with `settings://notification_history`. More info [here](https://companion.home-assistant.io/docs/notifications/notifications-basic#opening-a-url).
 | `app_actions`  | Android / iOS / HTML5 | You can specify a list of actions that users can click and Home Assistant will receive the event. More info on the [Companion app details](#companion-app-details) section.
@@ -358,6 +362,15 @@ data:
   message: This is the message I want you to read!
   notify_app: notify.all_phones
 ```
+
+### Channel and Critical on Android: please read carefully
+On Android channel settings are created when first notification arrive to the app of that channel.
+So, for example, if you send the first notification of the channel `alarm` with the parameter `critical: true` the channel will be configured to ignore *Do Not Disturb* of the phone.
+But if you already sent at least one notification with channel `alarm` without `critical: true` then the channel was configured to not bypass *Do Not Disturb* mode of the phone and you must set that option manually by going in android settings, app settings, Home Assistant, notifications, your channel name and then set that option.
+
+Please note that every Android manufacturer do some customizations on the settings so precise instruction cannot be writed here.
+
+**Android app version 2022.8 or later required**
 
 ## Pushover details
 To send a notification to a [connected pushover app](https://www.home-assistant.io/integrations/pushover/) you have to set the `notify_pushover` parameter.

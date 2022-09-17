@@ -94,3 +94,9 @@ Please note that before [3.6.1](#ver-361---07092022) version italian language wa
  - **BREAKING CHANGE**: from this release multinotify is not anymore named `multinotify3` but `multinotify` as it had a different name in the beta phase to be available side to side with the stable version. Now with this version the code is considered stable so you cannot anymore place it side to side with older versions but you have to remove the older 2.0 version.
  - Used media_stream instead of channel for Android app critical notification to ignore dnd phone settings. This was a change in the app usage since 2022.8 version.
  
+ ## Ver. 3.7.0 - 17/09/2022
+  - Added parameter `notify_app_tts`. If you set it to true on Android phones the message will be pronounced instead of showing a notification. If you want to ignore the *Do Not Disturb* mode of the phone and play at full volume use with `critical: true`.
+  - Added parameter `notify_persistent`. If you set it to `true` then a persistent notification will be created in Home Assistant (shown in the UI at the row *notifications* in the bottom of the menu)
+  - You can now specify `message: "clear_notification"` by specifying a tag of a previous sent notification you want to remove. It will be removed on Android, iOS, Persistent notification.
+  - Fix for critical notifications on Android. You need to specify `critical: true` and a `channel` that you can then assign a sound of your like.
+  The channel will be configured as to bypass "Do Not Disturb" settings of the phone at first notification of the channel. If you already send notifications with this channel (without `critical: true`) then you have to set to bypass Do Not Disturb manually in notifications settings of the app, in Android settings. Now it uses `alarm_stream_max` instead of `alarm_stream` to play at highest volume possible. **Needs App ver 2022.8 or later**.
