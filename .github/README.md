@@ -13,8 +13,10 @@ This is a service that use nearly all notify services of **Home Assistant** to g
 - [**iOS Home Assistant Companion App**](https://companion.home-assistant.io/download) (supporta nearly all advanced options!)
 - [**Pushover**](https://www.home-assistant.io/integrations/pushover/)
 - [**HTML5 push notifications**](https://www.home-assistant.io/integrations/html5/)
+- [**Persistent notification**](https://www.home-assistant.io/integrations/persistent_notification/)
 
 **PLEASE READ THE [CHANGELOG](/CHANGELOG.md) TO SEE WHAT'S CHANGED FROM YOUR INSTALLED VERSION BEFORE TO UPDATE!**
+
 
 ## Features
  - One call, multiple notification services, easy, compact and coherent.
