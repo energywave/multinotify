@@ -17,9 +17,12 @@ This is a service that use nearly all notify services of **Home Assistant** to g
 
 **PLEASE READ THE [CHANGELOG](/CHANGELOG.md) TO SEE WHAT'S CHANGED FROM YOUR INSTALLED VERSION BEFORE TO UPDATE!**
 
+If you like my work and want to help me to improve and implement new features please consider a donation to support my long nights of work:
+- [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](henrik_sozzi@hotmail.com) <--- Donate using **Paypal**
+- <a href="https://www.buymeacoffee.com/henriksozzi" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/guidelines/download-assets-sm-2.svg" alt="Buy Me A Coffee" style="height: 31px;width: 96px" ></a> <--- Donate using **Buy me a coffee**
 
 ## Features
- - One call, multiple notification services, easy, compact and coherent.
+ - One call, multiple notification services, easy, compact and consistent interface.
  - You can specifiy different messages for Alexa or Google Home/TTS, if you want (so that you can leverage SSML markup just for Alexa announcement, for example)
  - **ALEXA**: you can specify a single device, an Alexa multi room group of devices, an Home Assistant group of devices or a list of single devices as a target.
  - **ALEXA**: notification volume you choose, your previous volume for every device will be restored
@@ -34,7 +37,7 @@ This is a service that use nearly all notify services of **Home Assistant** to g
  - **APP**: you can specify (optionally) tag, group, channel, subtitle/subject, critical (to send an important notification that ignore phone *Do Not Disturb* mode), critical volume (iOS only), URL to open when you click, actions (max 3 on android, max 10 on iOS), attachment. On Android you can even play a TTS message.
  - **PUSHOVER**: supports multiple services, title, message, URL and attachment
  - **HTML5**: supports multiple services, title, message, icon, tag, critical, URL, actions and attachment
- - **ATTACHMENT**:
+  - **ATTACHMENT**:
    - You can pass a **relative or absolute link to a media file** (image, video, audio file. Services limitations apply) to show that in the notification
    - You can pass an **entity_id of a camera** you have in your Home Assistant to let Multinotify send the best snapshot it can to every involved service. For example: it will send a snapshot to iOS and, when you enlarge the notification, you'll see a live stream of the camera. For pushover it will automatically save a snapshot an attach. For services that supports that it will use camera proxy. Don't bother about details, **just pass a camera entity_id and you'll receive a snapshot of that camera!**
 
