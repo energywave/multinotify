@@ -18,7 +18,7 @@ This is a service that use nearly all notify services of **Home Assistant** to g
 **PLEASE READ THE [CHANGELOG](/CHANGELOG.md) TO SEE WHAT'S CHANGED FROM YOUR INSTALLED VERSION BEFORE TO UPDATE!**
 
 If you like my work and want to help me to improve and implement new features please consider a donation to support my long nights of work:
-- [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](henrik_sozzi@hotmail.com) <--- Donate using **Paypal**
+- <a href="https://paypal.me/henriksozzi?country.x=IT&locale.x=it_IT" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-green.svg"/></a> <--- Donate using **Paypal**
 - <a href="https://www.buymeacoffee.com/henriksozzi" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/guidelines/download-assets-sm-2.svg" alt="Buy Me A Coffee" style="height: 31px;width: 96px" ></a> <--- Donate using **Buy me a coffee**
 
 ## Features
