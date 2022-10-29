@@ -89,7 +89,7 @@ I wrote an [article about multinotify on my blog site](https://henriksozzi.it/20
 
 **WARNING**: check that your script is the correct one as many set_state you can find on the web doesn't allow to create entities like this specific one!
 
- - [Saver](https://https://github.com/PiotrMachowski/Home-Assistant-custom-components-Saver) custom component available on HACS only if you want to play announcements on Alexa devices.
+ - [Saver](https://github.com/PiotrMachowski/Home-Assistant-custom-components-Saver) custom component available on HACS only if you want to play announcements on Alexa devices.
  - If you want to send your camera snapshot to Pushover you'll have to create the folder /config/tmp and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
  - If you want to send your camera snapshot to HTML5 you'll have to create the folder /config/www/cam and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
 
