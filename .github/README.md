@@ -27,7 +27,7 @@ If you like my work and want to help me to improve and implement new features pl
  - **ALEXA**: you can specify a single device, an Alexa multi room group of devices, an Home Assistant group of devices or a list of single devices as a target.
  - **ALEXA**: notification volume you choose, your previous volume for every device will be restored
  - **ALEXA**: music will be paused and automatically resumed after the announce
- - **ALEXA**: some volume bad behavior of Alexa Media Player are mitigated
+ - **ALEXA**: `volume_level` attribute not available after startup bug of Alexa Media Player is resolved elegantly
  - **ALEXA**: the service will wait during announce so that, if used in a sequence, the next command will be executed AFTER the announce has been terminated. You can say, for example "Now I'll raise your shutters" and only then your shutters move.
  - **ALEXA**/**Google Home**/**TTS**: you can select a *Do Not Disturb* period, by default from 11:00 pm to 9:00 am. In this period no announce will be played if not specified the "force" parameter
  - **ALEXA**: you can choose between announce and tts service
@@ -80,14 +80,16 @@ Then it was adopted and I began to implement other services and keep the work as
 I wrote an [article about multinotify on my blog site](https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/), it's in Italian language but you can translate using Google Chrome. The multinotify described there is usually older than the one you can find here.
 
 # Dependencies
- - [Alexa Media Player](https://github.com/custom-components/alexa_media_player) only if you want to play announcments on Alexa devices
+ - [Alexa Media Player](https://github.com/custom-components/alexa_media_player) only if you want to play announcements on Alexa devices
  - [Companion apps for Android or iOS](https://companion.home-assistant.io/) only if you want notifications to the apps. (note: **app ver. 2022.8 or later required for Android**)
  - Specific `set_state` python script (needed only for Alexa and Google Home/TTS announcments):
     - [File from @xannor repo](https://github.com/xannor/hass_py_set_state) or
     
     - [File from my website, with complete explanation in IT language](https://henriksozzi.it/2021/04/impostare-lo-stato-di-unentita-in-home-assistant/)
-  
+
 **WARNING**: check that your script is the correct one as many set_state you can find on the web doesn't allow to create entities like this specific one!
+
+ - [Saver](https://https://github.com/PiotrMachowski/Home-Assistant-custom-components-Saver) custom component available on HACS only if you want to play announcements on Alexa devices.
  - If you want to send your camera snapshot to Pushover you'll have to create the folder /config/tmp and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
  - If you want to send your camera snapshot to HTML5 you'll have to create the folder /config/www/cam and you'll have to ensure that the path is included in [`allowlist_external_dirs`](https://www.home-assistant.io/docs/configuration/basic/#allowlist_external_dirs)
 

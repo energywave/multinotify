@@ -21,18 +21,27 @@ group:
     entities:
       - media_player.primo_piano
       - media_player.mansarda
+  google_home_all:
+    name: All Google Home
+    entities:
+      - media_player.google_mansarda
 
 notify:
-  # notify.all_devices group to be used in multinotify to send a notification to all your connected apps.
+  # notify.all_android_devices group to be used in multinotify to send a notification to all your connected Android apps.
   # You can add other notify group as you want.
   # IMPORTANT: please create only homogeneous groups between Android and iOS, DON'T create mixed groups (with some Andoird and some iOS)
   # If you create iOS groups please remember to add them too to the anchro parameter iphones in the multinotify_v3.yaml file
-  - name: all_devices
+  - name: all_android_devices
     platform: group
     services:
-      # TODO: Edit the list of services to reflect your own services you want to send to
+      # TODO: Edit the list of services to reflect your own Android app services you want to send to
       - service: mobile_app_tel_henrik
       - service: mobile_app_smartphone_antonella
+  - name: all_ios_devices
+    platform: group
+    services:
+      # TODO: Edit the list of services to reflect your own iOS app services you want to send to
+      - service: mobile_app_iphone
 
 input_text:
   multinotify_last_alexa_message:

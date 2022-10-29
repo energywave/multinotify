@@ -1,0 +1,81 @@
+automation:
+  # Workaround for the peculiarity of Alexa Media Player not setting the volume_level attribute at Home Assistant start.
+  # If you don't use Alexa you can remove or deactivate the following automation.
+  # This automation will backup at home assistant shutdown every volume_level of every media_player that has a valid value
+  # as a fallback value to restore after the announcement if the volume_level attribute was not present on the entity as per following issue.
+  # Ref: https://github.com/custom-components/alexa_media_player/issues/1394
+  # NOTE: This workaround will be probably removed in the future as not anymore necessary with the automation "Media players - Event - Backup volume_level"
+  - id: 8f59d1bc-33a5-467b-9909-487d1a534452
+    alias: "Media players - Event - Backup volume at shutdown"
+    trigger:
+      - platform: homeassistant
+        event: shutdown
+    action:
+      - repeat:
+          for_each: >
+            {{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | list }}
+          sequence:
+            - alias: "Entity volume backup"
+              service: saver.set_variable
+              data:
+                name: "{{ repeat.item }}.volume_level"
+                value: "{{ state_attr(repeat.item, 'volume_level') }}"
+            # - service: script.multinotify
+            #   data:
+            #     title: "TEST"
+            #     message: "Backup entità {{repeat.item}}"
+            #     notify_ha: true
+
+  # This automation will set volume_level on the attribute of every media player by using the backed up from the
+  # automation above. You can safely remove this automation if you don't use Alexa.
+  # NOTE: This workaround will be probably removed in the future as not anymore necessary with the automation "Media players - Event - Backup volume_level"
+  - id: 21318363-635e-4850-bc4b-1389c76f8df8
+    alias: "Media players - Event - Restore volume at startup"
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - repeat:
+          for_each: >
+            {{ states.media_player | rejectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | list }}
+          sequence:
+            - variables:
+                saver_name: "{{repeat.item}}.volume_level"
+            - if: "{{ states.saver.saver.state is defined and saver_name in state_attr('saver.saver', 'variables')}}"
+              then:
+                - alias: "Entity volume restore"
+                  service: python_script.set_state
+                  data:
+                    entity_id: "{{repeat.item}}"
+                    volume_level: >
+                      {% if states.saver.saver.state is defined and saver_name in state_attr("saver.saver", "variables") %}
+                        {{state_attr("saver.saver", "variables")[saver_name] | float(0.6) | round(2)}}
+                      {% else %}
+                        0.6
+                      {% endif %}      
+
+  # This automation backup the volume_level every time it changes on every media_player entity.
+  # The value backed up will be used when restoring the volume, if a valid volume_level was not present on the entity.
+  # This is necessary for Google Home devices as well as Alexa to know their volume after reboot (as Alexa Media Player don't set it at boot
+  # Ref: https://github.com/custom-components/alexa_media_player/issues/1394
+  - id: f6845dff-4f8c-462c-b439-8db9ea67dc10
+    alias: "Media players - Event - Backup volume_level"
+    mode: queued
+    trigger:
+      - platform: event
+        event_type: state_changed
+    condition:
+      # Escludo tutto quel che non è un media_player per ottimizzare la velocità di esecuzione
+      - "{{ trigger.event.data.entity_id.startswith('media_player.') }}"
+      # Ora che so che è un media_player faccio procedere solo se l'aggiornamento contiene l'attributo volume_level
+      - "{{ 'volume_level' in trigger.event.data.new_state.attributes }}"
+    variables:
+      entity_id: "{{ trigger.event.data.entity_id }}"
+    action:
+      - variables:
+          volume_level: "{{ trigger.event.data.new_state.attributes['volume_level'] | float(0.6) | round(2) }}"
+      - service: saver.set_variable
+        data:
+          name: "{{ entity_id }}.volume_level"
+          value: "{{ volume_level }}"
+

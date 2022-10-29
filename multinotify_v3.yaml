@@ -1,11 +1,12 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.7.0
-# Descrizione: script multinotify per gestire l'invio di notifiche con un unico servizio alle seguenti piattaforme:
+# Package Multinotify - Ver. 3.8.0
+# Description: multinotify script to handle notifications and announcements using the following services:
 #               - App companion (Android e iOS)
 #               - Pushover
-#               - HTML5
+#               - HTML5 push notifications
 #               - Alexa (singole, gruppi, elenco)
-#               - Google Home (e altri riproduttore TTS)
+#               - Google Home (and other TTS players)
+#               - Persistent notifications
 # Article with full details (italian language): https://henriksozzi.it/2022/01/package-multinotify-notifiche-su-alexa-e-app/
 # Repository: https://github.com/energywave/multinotify
 # -------------------------------------------------------------------------------------------------
@@ -18,8 +19,6 @@
 # -------------------------------------------------------------------------------------------------
 
 # Please refer to the readme visible here: https://github.com/energywave/multinotify
-
-
 
 ############################
 # ANCHOR PARAMETER TO SET: #
@@ -38,7 +37,7 @@ homeassistant:
     package.node_anchors:
       tts_default_service: &tts_default_service "tts.cloud_say"
       default_volume: &default_volume 0.6
-      iphones: &iphones "notify.mobile_app_iphone_di_erica"
+      iphones: &iphones "notify.mobile_app_iphone"
       iphones_critical_volume: &iphones_critical_volume 1.0
 
 # -------------------------- DON'T EDIT AFTER THIS LINE --------------------------
@@ -57,12 +56,20 @@ script:
         description: "Volume to set to this device"
     variables:
       default_volume: *default_volume
+      saver_name: "{{target}}.volume_level"
+      saver_volume: >
+        {% if states.saver.saver.state is defined and (saver_name) in state_attr("saver.saver", 'variables') %}
+          {{state_attr("saver.saver", "variables")[saver_name] | float(0) | round(2)}}
+        {% else %}
+          {{default_volume}}
+        {% endif %}
+      
     sequence:
       - alias: "Set prev volume"
         service: python_script.set_state
         data:
           entity_id: "tmp.{{ target | regex_findall('\\.(\\w+)') | first }}_prev_volume"
-          state: "{{state_attr(target, 'volume_level') | float(default_volume) | round(2)}}"
+          state: "{{state_attr(target, 'volume_level') | float(saver_volume) | round(2)}}"
           was_playing: "{{states[target].state == 'playing'}}"
           allow_create: true
       - alias: "Was media player playing?"
@@ -73,6 +80,10 @@ script:
                 service: media_player.media_pause
                 target:
                   entity_id: "{{target}}"
+      # Workaround to make Alexa not playing the "beep" of the volume change
+      - service: media_player.media_stop
+        data:
+          entity_id: "{{target}}"
       - alias: "Set desired volume"
         service: media_player.volume_set
         target:
@@ -100,6 +111,10 @@ script:
           object_id: "{{target | regex_findall('\\.(\\w+)') | first}}"
           prev_vol: "tmp.{{object_id}}_prev_volume"
           was_playing: "{{state_attr(prev_vol, 'was_playing')}}"
+      # Workaround to make Alexa not playing the "beep" of the volume change
+      - service: media_player.media_stop
+        data:
+          entity_id: "{{target}}"
       - alias: "Restore  previous volume"
         service: media_player.volume_set
         target:
@@ -267,7 +282,7 @@ script:
         description: "If you set this to true then a persistent notification will be sent to Home Assistant (visible on the notification row in the left menu)"
         selector:
           boolean:
-        example: true
+        example: "true"
 
       # Various app parameters
       icon:
@@ -496,7 +511,7 @@ script:
       # Pushover
       - alias: "Pushover notify"
         if: "{{ notify_pushover is defined }}"
-        then:  
+        then:
           - if: "{{camera_entity is not none}}"
             then:
               - service: camera.snapshot
@@ -581,7 +596,7 @@ script:
                   message: "{{message}}"
                   title: "{{title_var}}"
 
-      # Alexa announcment
+      # Alexa announcement
       - alias: "Alexa notify"
         choose:
           - conditions:
@@ -686,6 +701,18 @@ script:
                       {{tts_target}}
                     {% endif %}
                   count: "{{list.split(',') | count}}"
+                  first_target: >
+                    {% set object_id = tts_target | regex_findall('\\.(\\w+)') | first %}
+                    {% if not tts_target is string %}
+                      {# A list of inline entities #}
+                      {{tts_target | first}}
+                    {% elif tts_target.startswith('group.') %}
+                      {# Media player group #}
+                      {{expand(states[tts_target]) | map(attribute='entity_id') | first }}
+                    {% elif tts_target.startswith('media_player.') %}
+                      {# Single media player entity #}
+                      {{tts_target}}
+                    {% endif %}
               - repeat:
                   while: "{{ repeat.index <= count }}"
                   sequence:
@@ -714,8 +741,8 @@ script:
                   # options: >
                   #   {% if service == "tts.cloud_say" %}gender: female{%endif%}
               # Wait for the time that Google Home will use to play the announcement
-              - delay:
-                  seconds: "{{(1 + (message.count(', ') + message.count('. ') + message.count('! ') + message.count('? ') + message.count(': ') + message.count('; ')) | float(0) * 0.35 + (message | length) * 0.06) | round(default=0)}}"
+              - wait_template: "{{is_state(first_target, 'playing')}}"
+              - wait_template: "{{is_state(first_target, 'idle')}}"
               - alias: "Set last message read"
                 service: python_script.set_state
                 data:
@@ -749,21 +776,3 @@ script:
             entity_id: input_datetime.multinotify_dnd_start
           data:
             time: "23:00:00"
-
-automation:
-  # Workaround for the peculiarity of Alexa Media Player not setting the volume_level attribute at Home Assistant start
-  # Ref: https://github.com/custom-components/alexa_media_player/issues/1394
-  - id: 2d897264-e05c-46bd-ba23-772fbeeab7be
-    alias: "Alexa - Event - Set a default volume to all Alexa devices at HA start"
-    trigger:
-      - platform: homeassistant
-        event: start
-    variables:
-      default_volume: *default_volume
-    action:
-      - alias: "Imposta il volume al valore di default"
-        service: media_player.volume_set
-        target:
-          entity_id: group.ovunque
-        data:
-          volume_level: "{{default_volume}}"
