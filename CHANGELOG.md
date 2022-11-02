@@ -100,9 +100,13 @@ Please note that before [3.6.1](#ver-361---07092022) version italian language wa
  - You can now specify `message: "clear_notification"` by specifying a tag of a previous sent notification you want to remove. It will be removed on Android, iOS, Persistent notification.
  - Fix for critical notifications on Android. You need to specify `critical: true` and a `channel` that you can then assign a sound of your like.
   The channel will be configured as to bypass "Do Not Disturb" settings of the phone at first notification of the channel. If you already send notifications with this channel (without `critical: true`) then you have to set to bypass Do Not Disturb manually in notifications settings of the app, in Android settings. Now it uses `alarm_stream_max` instead of `alarm_stream` to play at highest volume possible. **Needs App ver 2022.8 or later**.
+
 ## Ver. 3.8.0 - 29 Oct 2022
  - **Custom component [Saver](https://github.com/PiotrMachowski/Home-Assistant-custom-components-Saver) is now needed as a dependency** (only if you use vocal assistants)
  - Alexa Media Player bug of `volume_level` attribute not available at startup is now completely fixed by multinotify in the vocal_assistants.yaml file by backing up volume_level and restore it at startup.
  - Google Home volume restore is now working by backing up volume_level every time it changes so that we have it when in need to restore previous volume.
  - Due to the above improvements no more "beep" of every Alexa at every Home Assistant boot!
  - An experimental feature discovered by me was inserted that allow to not play that tedious "beep" at every volume change of alexa devices, before and after the announcement. By issuing a media_player.media_stop before the set_volume command no beep is played. It's a workaround but it seem to work. I'm using myself from more than two weeks. The only issue is the lost sync sometimes between multiple devices announcement.
+
+## Ver. 3.8.1 - 02 Nov 2022
+ - Now every notification service called inside multinotify has the `continue_on_error: true` attribute. That way if, for example, you specify a wrong app service name, the notification on the app will not work but subsequent services, like Alexa, will work correctly.
