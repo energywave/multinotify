@@ -4,8 +4,9 @@
 
 input_text:
   multinotify_message:
-    name: Messagge
+    name: Message
     icon: mdi:text-box-edit-outline
+    max: 255
 input_select:
   multinotify_dest:
     name: Destination
@@ -54,22 +55,22 @@ script:
         value_template: "{{ msg != '' }}"
 
       - alias: "In execution"
-        service: input_boolean.turn_on
+        action: input_boolean.turn_on
         data:
           entity_id: input_boolean.multinotify_executing
       - alias: "Multinotify calling"
-        service: script.multinotify
+        action: script.multinotify
         data:
           message: "{{msg}}"
           alexa_target: "{{dest}}"
           alexa_volume: "{{(states('input_number.multinotify_volume') | float(60) / 10) | round(1)}}"
           alexa_force: true
       - alias: "End of execution"
-        service: input_boolean.turn_off
+        action: input_boolean.turn_off
         data:
           entity_id: input_boolean.multinotify_executing
       - alias: "Message reset"
-        service: input_text.set_value
+        action: input_text.set_value
         data:
           entity_id: input_text.multinotify_message
           value: ""

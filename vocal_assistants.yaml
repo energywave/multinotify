@@ -7,20 +7,20 @@ automation:
   # NOTE: This workaround will be probably removed in the future as not anymore necessary with the automation "Media players - Event - Backup volume_level"
   - id: 8f59d1bc-33a5-467b-9909-487d1a534452
     alias: "Media players - Event - Backup volume at shutdown"
-    trigger:
-      - platform: homeassistant
+    triggers:
+      - trigger: homeassistant
         event: shutdown
-    action:
+    actions:
       - repeat:
           for_each: >
             {{ states.media_player | selectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | list }}
           sequence:
             - alias: "Entity volume backup"
-              service: saver.set_variable
+              action: saver.set_variable
               data:
                 name: "{{ repeat.item }}.volume_level"
                 value: "{{ state_attr(repeat.item, 'volume_level') }}"
-            # - service: script.multinotify
+            # - action: script.multinotify
             #   data:
             #     title: "TEST"
             #     message: "Backup entità {{repeat.item}}"
@@ -31,10 +31,10 @@ automation:
   # NOTE: This workaround will be probably removed in the future as not anymore necessary with the automation "Media players - Event - Backup volume_level"
   - id: 21318363-635e-4850-bc4b-1389c76f8df8
     alias: "Media players - Event - Restore volume at startup"
-    trigger:
-      - platform: homeassistant
+    triggers:
+      - trigger: homeassistant
         event: start
-    action:
+    actions:
       - repeat:
           for_each: >
             {{ states.media_player | rejectattr('attributes.volume_level', 'defined') | map(attribute='entity_id') | list }}
@@ -44,7 +44,7 @@ automation:
             - if: "{{ states.saver.saver.state is defined and saver_name in state_attr('saver.saver', 'variables')}}"
               then:
                 - alias: "Entity volume restore"
-                  service: python_script.set_state
+                  action: python_script.set_state
                   data:
                     entity_id: "{{repeat.item}}"
                     volume_level: >
@@ -52,7 +52,7 @@ automation:
                         {{state_attr("saver.saver", "variables")[saver_name] | float(0.6) | round(2)}}
                       {% else %}
                         0.6
-                      {% endif %}      
+                      {% endif %}
 
   # This automation backup the volume_level every time it changes on every media_player entity.
   # The value backed up will be used when restoring the volume, if a valid volume_level was not present on the entity.
@@ -61,21 +61,20 @@ automation:
   - id: f6845dff-4f8c-462c-b439-8db9ea67dc10
     alias: "Media players - Event - Backup volume_level"
     mode: queued
-    trigger:
-      - platform: event
+    triggers:
+      - trigger: event
         event_type: state_changed
-    condition:
+    conditions:
       # Escludo tutto quel che non è un media_player per ottimizzare la velocità di esecuzione
       - "{{ trigger.event.data.entity_id.startswith('media_player.') }}"
       # Ora che so che è un media_player faccio procedere solo se l'aggiornamento contiene l'attributo volume_level
       - "{{ 'volume_level' in trigger.event.data.new_state.attributes }}"
     variables:
       entity_id: "{{ trigger.event.data.entity_id }}"
-    action:
+    actions:
       - variables:
           volume_level: "{{ trigger.event.data.new_state.attributes['volume_level'] | float(0.6) | round(2) }}"
-      - service: saver.set_variable
+      - action: saver.set_variable
         data:
           name: "{{ entity_id }}.volume_level"
           value: "{{ volume_level }}"
-

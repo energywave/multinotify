@@ -21,6 +21,11 @@ group:
     entities:
       - media_player.primo_piano
       - media_player.mansarda
+  common_alexa:
+    name: Alexa devices used by everyone
+    entities:
+      - media_player.pian_terreno
+      - media_player.primo_piano
   google_home_all:
     name: All Google Home
     entities:
@@ -41,7 +46,7 @@ notify:
     platform: group
     services:
       # TODO: Edit the list of services to reflect your own iOS app services you want to send to
-      - service: mobile_app_iphone
+      - service: mobile_app_iphone_di_erica
 
 input_text:
   multinotify_last_alexa_message:

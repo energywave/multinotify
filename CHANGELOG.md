@@ -110,3 +110,9 @@ Please note that before [3.6.1](#ver-361---07092022) version italian language wa
 
 ## Ver. 3.8.1 - 02 Nov 2022
  - Now every notification service called inside multinotify has the `continue_on_error: true` attribute. That way if, for example, you specify a wrong app service name, the notification on the app will not work but subsequent services, like Alexa, will work correctly.
+
+ ## Ver. 3.8.2 - 23 Feb 2025
+ - **Android app notifications**: fixed the wrong tag behavior seen lately. Not sure from where it began but now the tag, if not specified, is randomly generated to be sure that notifications don't replace each other when it should not
+ - **Android app notifications**: fixed the "None" in the message seen in the last month. The subtitle argument changed how it's working in the companion app.
+ - Refactored triggers, conditions, actions with the new Home Assistant syntax.
+ - Some smaller fixes

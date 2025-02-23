@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.8.1
+# Package Multinotify - Ver. 3.8.2
 # Description: multinotify script to handle notifications and announcements using the following services:
 #               - App companion (Android e iOS)
 #               - Pushover
@@ -66,7 +66,7 @@ script:
 
     sequence:
       - alias: "Set prev volume"
-        service: python_script.set_state
+        action: python_script.set_state
         data:
           entity_id: "tmp.{{ target | regex_findall('\\.(\\w+)') | first }}_prev_volume"
           state: "{{state_attr(target, 'volume_level') | float(saver_volume) | round(2)}}"
@@ -77,21 +77,23 @@ script:
           - conditions: "{{states[target].state == 'playing'}}"
             sequence:
               - alias: "Pause the media player"
-                service: media_player.media_pause
+                action: media_player.media_pause
                 target:
                   entity_id: "{{target}}"
       # Workaround to make Alexa not playing the "beep" of the volume change
-      - service: media_player.media_stop
+      - action: media_player.media_stop
+        continue_on_error: true
         data:
           entity_id: "{{target}}"
       - alias: "Set desired volume"
-        service: media_player.volume_set
+        continue_on_error: true
+        action: media_player.volume_set
         target:
           entity_id: "{{target}}"
         data:
           volume_level: "{{volume | float(default_volume) | round(2)}}"
       - alias: "Workaround to ensure that Alexa Media Player has an updated volume_level"
-        service: python_script.set_state
+        action: python_script.set_state
         data:
           entity_id: "{{target}}"
           volume_level: "{{volume | float(default_volume) | round(2)}}"
@@ -112,17 +114,19 @@ script:
           prev_vol: "tmp.{{object_id}}_prev_volume"
           was_playing: "{{state_attr(prev_vol, 'was_playing')}}"
       # Workaround to make Alexa not playing the "beep" of the volume change
-      - service: media_player.media_stop
+      - action: media_player.media_stop
+        continue_on_error: true
         data:
           entity_id: "{{target}}"
       - alias: "Restore  previous volume"
-        service: media_player.volume_set
+        action: media_player.volume_set
+        continue_on_error: true
         target:
           entity_id: "{{target}}"
         data:
           volume_level: "{{states(prev_vol) | float(default_volume) | round(2)}}"
       - alias: "Workaround to ensure that Alexa Media Player has an updated volume_level"
-        service: python_script.set_state
+        action: python_script.set_state
         data:
           entity_id: "{{target}}"
           volume_level: "{{states(prev_vol)}}"
@@ -134,7 +138,8 @@ script:
               - alias: "A delay to let Alexa Media Player apply the volume"
                 delay: 2
               - alias: "Unpause music play"
-                service: media_player.media_play
+                action: media_player.media_play
+                continue_on_error: true
                 target:
                   entity_id: "{{target}}"
 
@@ -144,6 +149,8 @@ script:
     description: "Send a notification to Alexa, Google Home, Android and iOS Companion App, Pushover and HTML5. With many enanchments!"
     mode: queued
     max: 10
+    trace:
+      stored_traces: 20
     fields:
       # Generic fields valid for all notify kinds
       title:
@@ -166,8 +173,9 @@ script:
         description: "Single Alexa entity_id, list of Alexa entity_ids, Home Assistant group or Alexa speaker group media player where you want to read the announcment"
         selector:
           entity:
-            integration: alexa_media
-            domain: media_player
+            filter:
+              - integration: alexa_media
+                domain: media_player
         example: "media_player.first_floor_alexa"
       alexa_message:
         name: "Alexa message (if different)"
@@ -207,7 +215,8 @@ script:
         description: "Google Home or TTS media player single entity, list of entities or media_player group that will play the announcment"
         selector:
           entity:
-            domain: media_player
+            filter:
+              - domain: media_player
         example: "media_player.google_home_upstairs"
       tts_message:
         name: "TTS message (if different)"
@@ -448,10 +457,24 @@ script:
         {% elif notify_html5 is defined %}
           {{notify_html5}}
         {% endif %}
+      tag_value: >-
+        {% if tag is defined and (tag | trim) != "" %}
+          {{ tag }}
+        {% else %}
+          {# The value '' or None for tas seems to specify a value. I've not found a way to not specify a tag without defining it. This way we create a random value, obtaining the same result... #}
+          {% set charlist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789' %}
+          {% set randomstring = namespace(value='') %}
+
+          {% for i in range(16) %}
+            {% set randomstring.value = randomstring.value ~ charlist | random %}
+          {% endfor %}
+
+          {{ randomstring.value }}          
+        {% endif %}
     sequence:
       # Ensure DND are initialized
       - alias: "Ensure DND are initialized"
-        service: script.multinotify_dnd_init
+        action: script.multinotify_dnd_init
 
       # Companion app
       - alias: "Notifica App"
@@ -463,7 +486,7 @@ script:
               if: "{{repeat.item in iphones}}"
               then:
                 # iOS companion app
-                service: "{{repeat.item}}"
+                action: "{{repeat.item}}"
                 continue_on_error: true
                 data:
                   title: "{{title_var}}"
@@ -477,7 +500,7 @@ script:
                     tag: "{{tag | default(None)}}"
                     url: "{{url | default(None)}}"
                     entity_id: "{{camerastream_ios}}"
-                    actions: "{{app_actions}}"
+                    actions: "{{app_actions | default(None)}}"
                     push:
                       interruption-level: "{{'critical' if critical_var else 'active'}}"
                       sound:
@@ -485,8 +508,8 @@ script:
                         critical: "{{'1' if critical_var else '0'}}"
                         volume: "{{critical_volume | default(iphones_critical_volume)}}"
               else:
-                # Notifica dall'app companion ad Android
-                service: "{{repeat.item}}"
+                # Android companion app
+                action: "{{repeat.item}}"
                 continue_on_error: true
                 data:
                   title: "{{title_var}}"
@@ -497,7 +520,7 @@ script:
                     group: "{{group | default(channel) | default('info')}}"
                     channel: "{{channel_var}}"
                     media_stream: "{{media_stream_var}}"
-                    tag: "{{tag | default('')}}"
+                    tag: "{{ tag_value }}"
                     icon_url: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
                     ttl: 0
                     priority: high
@@ -505,10 +528,10 @@ script:
                     color: "{{'red' if critical_var else ''}}"
                     ledColor: "{{'red' if critical_var else ''}}"
                     persistent: "{{critical_var}}"
-                    subject: "{{subtitle | default(None)}}"
+                    subject: "{{subtitle | default(message)}}"
                     clickAction: "{{url | default(None)}}"
                     tts_text: "{{android_tts}}"
-                    actions: "{{app_actions}}"
+                    actions: "{{app_actions | default(None)}}"
 
       # Pushover
       - alias: "Pushover notify"
@@ -516,12 +539,13 @@ script:
         then:
           - if: "{{camera_entity is not none}}"
             then:
-              - service: camera.snapshot
+              - action: camera.snapshot
+                continue_on_error: true
                 target:
                   entity_id: "{{camera_entity}}"
                 data:
                   filename: "{{snapshot_filename_pushover}}"
-          - service: "{{notify_pushover}}"
+          - action: "{{notify_pushover}}"
             continue_on_error: true
             data:
               title: "{{title_var}}"
@@ -537,7 +561,8 @@ script:
         then:
           - if: "{{camera_entity is not none}}"
             then:
-              - service: camera.snapshot
+              - action: camera.snapshot
+                continue_on_error: true
                 target:
                   entity_id: "{{camera_entity}}"
                 data:
@@ -547,7 +572,7 @@ script:
               sequence:
                 if: "{{app_actions is defined and app_actions is not none}}"
                 then:
-                  service: "{{repeat.item}}"
+                  action: "{{repeat.item}}"
                   continue_on_error: true
                   data:
                     title: "{{title_var}}"
@@ -562,7 +587,7 @@ script:
                       image: "{{attachment_image_html5}}"
                       icon: "/local/notify_{{icon | default(channel) | default(group) | default('info')}}.png"
                 else:
-                  service: "{{repeat.item}}"
+                  action: "{{repeat.item}}"
                   continue_on_error: true
                   data:
                     title: "{{title_var}}"
@@ -582,13 +607,13 @@ script:
           # message: "clear_notification". Persistent notification will be dismissed
           - conditions: "{{(notify_ha | default(false)) and message == 'clear_notification'}}"
             sequence:
-              - service: persistent_notification.dismiss
+              - action: persistent_notification.dismiss
                 data:
                   notification_id: "{{tag if tag is defined else None}}"
           # A normal persistent notification to Home Assistant with notification_id (a working default value was not found for notification_id!)
           - conditions: "{{(notify_ha | default(false)) and tag is defined}}"
             sequence:
-              - service: persistent_notification.create
+              - action: persistent_notification.create
                 continue_on_error: true
                 data:
                   message: "{{message}}"
@@ -597,7 +622,7 @@ script:
           # A normal persistent notification to Home Assistant without notification_id
           - conditions: "{{notify_ha | default(false)}}"
             sequence:
-              - service: persistent_notification.create
+              - action: persistent_notification.create
                 continue_on_error: true
                 data:
                   message: "{{message}}"
@@ -642,7 +667,7 @@ script:
                   sequence:
                     - variables:
                         entity_id: "{{list.split(',')[repeat.index-1]}}"
-                    - service: script.multinotify_tts_pre
+                    - action: script.multinotify_tts_pre
                       continue_on_error: true
                       data:
                         target: "{{entity_id}}"
@@ -651,8 +676,8 @@ script:
               # Real notification
               - variables:
                   message: "{{alexa_message | default(message)}}"
-                  pure_message: "{{message | regex_replace(find='<[^>]*>', replace='')}}"
-              - service: notify.alexa_media
+                  pure_message: "{{message | striptags}}"
+              - action: notify.alexa_media
                 continue_on_error: true
                 data:
                   message: "{{message}}"
@@ -663,7 +688,7 @@ script:
               - delay:
                   seconds: "{{(5 + (pure_message.count(', ') + pure_message.count('. ') + pure_message.count('! ') + pure_message.count('? ') + pure_message.count(': ') + pure_message.count('; ')) | float(0) * 0.35 + (pure_message | length) * 0.06) | round(default=0)}}"
               - alias: "Set last announcment read"
-                service: python_script.set_state
+                action: python_script.set_state
                 data:
                   entity_id: input_text.multinotify_last_alexa_message
                   state: "{{pure_message}}"
@@ -675,7 +700,7 @@ script:
                   sequence:
                     - variables:
                         entity_id: "{{list.split(',')[repeat.index-1]}}"
-                    - service: script.multinotify_tts_post
+                    - action: script.multinotify_tts_post
                       continue_on_error: true
                       data:
                         target: "{{entity_id}}"
@@ -728,7 +753,7 @@ script:
                   sequence:
                     - variables:
                         entity_id: "{{list.split(',')[repeat.index-1]}}"
-                    - service: script.multinotify_tts_pre
+                    - action: script.multinotify_tts_pre
                       continue_on_error: true
                       data:
                         target: "{{entity_id}}"
@@ -736,10 +761,10 @@ script:
 
               # Real notification
               - variables:
-                  message: "{{tts_message | default(message)}}"
+                  message: "{{(tts_message | default(message)) | striptags}}"
                   default_service: *tts_default_service
                   service: "{{tts_service | default(default_service)}}"
-              - service: "{{service}}"
+              - action: "{{service}}"
                 continue_on_error: true
                 data:
                   entity_id: "{{tts_target}}"
@@ -753,10 +778,10 @@ script:
                   # options: >
                   #   {% if service == "tts.cloud_say" %}gender: female{%endif%}
               # Wait for the time that Google Home will use to play the announcement
-              - wait_template: "{{is_state(first_target, 'playing')}}"
-              - wait_template: "{{is_state(first_target, 'idle')}}"
+              - wait_template: "{{ is_state(first_target, 'playing') or is_state(first_target, 'unavailable') }}"
+              - wait_template: "{{ is_state(first_target, 'idle') or is_state(first_target, 'unavailable') }}"
               - alias: "Set last message read"
-                service: python_script.set_state
+                action: python_script.set_state
                 data:
                   entity_id: input_text.multinotify_last_tts_message
                   state: "{{message}}"
@@ -768,7 +793,7 @@ script:
                   sequence:
                     - variables:
                         entity_id: "{{list.split(',')[repeat.index-1]}}"
-                    - service: script.multinotify_tts_post
+                    - action: script.multinotify_tts_post
                       continue_on_error: true
                       data:
                         target: "{{entity_id}}"
@@ -779,12 +804,12 @@ script:
     sequence:
       if: "{{is_state('input_datetime.multinotify_dnd_end', '00:00:00') and is_state('input_datetime.multinotify_dnd_start', '00:00:00')}}"
       then:
-        - service: input_datetime.set_datetime
+        - action: input_datetime.set_datetime
           target:
             entity_id: input_datetime.multinotify_dnd_end
           data:
             time: "09:00:00"
-        - service: input_datetime.set_datetime
+        - action: input_datetime.set_datetime
           target:
             entity_id: input_datetime.multinotify_dnd_start
           data:
