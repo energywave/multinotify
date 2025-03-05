@@ -114,5 +114,7 @@ Please note that before [3.6.1](#ver-361---07092022) version italian language wa
  ## Ver. 3.8.2 - 23 Feb 2025
  - **Android app notifications**: fixed the wrong tag behavior seen lately. Not sure from where it began but now the tag, if not specified, is randomly generated to be sure that notifications don't replace each other when it should not
  - **Android app notifications**: fixed the "None" in the message seen in the last month. The subtitle argument changed how it's working in the companion app.
+ - **Alexa**: fixed music resume after announce. Alexa Media Player changed something and the previous method stopped working.
  - Refactored triggers, conditions, actions with the new Home Assistant syntax.
+ - README fixes
  - Some smaller fixes
