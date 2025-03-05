@@ -138,7 +138,10 @@ script:
               - alias: "A delay to let Alexa Media Player apply the volume"
                 delay: 2
               - alias: "Unpause music play"
-                action: media_player.media_play
+                action: media_player.play_media
+                data:
+                  media_content_type: custom
+                  media_content_id: "Resume play"
                 continue_on_error: true
                 target:
                   entity_id: "{{target}}"
