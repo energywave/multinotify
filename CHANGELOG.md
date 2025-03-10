@@ -118,3 +118,6 @@ Please note that before [3.6.1](#ver-361---07092022) version italian language wa
  - Refactored triggers, conditions, actions with the new Home Assistant syntax.
  - README fixes
  - Some smaller fixes
+
+## Ver. 3.8.3 - 10 Mar 2025
+ - **HTML5 and Pushover**: added a unique querystring to camera snapshot to prevent Home Assistant aggressive caching and force to reload the image from webserver

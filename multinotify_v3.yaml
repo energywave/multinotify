@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.8.2
+# Package Multinotify - Ver. 3.8.3
 # Description: multinotify script to handle notifications and announcements using the following services:
 #               - App companion (Android e iOS)
 #               - Pushover
@@ -380,6 +380,15 @@ script:
       channel_var: "{{(channel | default(group) | default('info'))}}"
       media_stream_var: "{{'alarm_stream_max' if critical_var else None}}"
       iphones_critical_volume: *iphones_critical_volume
+      random_str: >
+        {% set charlist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789' %}
+        {% set randomstring = namespace(value='') %}
+
+        {% for i in range(6) %}
+          {% set randomstring.value = randomstring.value ~ charlist | random %}
+        {% endfor %}
+
+        {{ now().timestamp() | string }}-{{ randomstring.value }}
       attachment_video: >
         {% if attachment is defined and attachment.endswith((".mp4", ".mpg", ".mpeg", ".avi")) %}
           {{attachment}}
@@ -436,7 +445,7 @@ script:
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{ attachment | replace("/media/local/","/media/") | replace("/local/","/config/www/")}}
         {% elif snapshot_filename_pushover is not none %}
-          {{snapshot_filename_pushover}}
+          {{snapshot_filename_pushover}}?refresh={{ random_str }}
         {% else %}
           None
         {% endif %}
@@ -444,7 +453,7 @@ script:
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
         {% elif snapshot_filename_html5 is not none %}
-          {{snapshot_filename_html5 | replace("/config/www/", "/local/")}}
+          {{ (snapshot_filename_html5 | replace("/config/www/", "/local/")) }}?refresh={{ random_str }}
         {% else %}
           None
         {% endif %}
@@ -465,14 +474,7 @@ script:
           {{ tag }}
         {% else %}
           {# The value '' or None for tas seems to specify a value. I've not found a way to not specify a tag without defining it. This way we create a random value, obtaining the same result... #}
-          {% set charlist = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789' %}
-          {% set randomstring = namespace(value='') %}
-
-          {% for i in range(16) %}
-            {% set randomstring.value = randomstring.value ~ charlist | random %}
-          {% endfor %}
-
-          {{ randomstring.value }}          
+          {{ random_str }}
         {% endif %}
     sequence:
       # Ensure DND are initialized
