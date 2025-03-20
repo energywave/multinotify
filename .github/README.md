@@ -39,7 +39,7 @@ If you like my work and want to help me to improve and implement new features pl
  - **HTML5**: supports multiple services, title, message, icon, tag, critical, URL, actions and attachment
   - **ATTACHMENT**:
    - You can pass a **relative or absolute link to a media file** (image, video, audio file. Services limitations apply) to show that in the notification
-   - You can pass an **entity_id of a camera** you have in your Home Assistant to let Multinotify send the best snapshot it can to every involved service. For example: it will send a snapshot to iOS and, when you enlarge the notification, you'll see a live stream of the camera. For pushover it will automatically save a snapshot an attach. For services that supports that it will use camera proxy. Don't bother about details, **just pass a camera entity_id and you'll receive a snapshot of that camera!**
+   - You can pass an **camera or image entity_id** you have in your Home Assistant to let Multinotify send the best snapshot it can to every involved service. For example: it will send a snapshot to iOS and, when you enlarge the notification, you'll see a live stream of the camera. For pushover and HTML5 it will automatically save a snapshot and attach. For services that supports that it will use camera proxy. Don't bother about details, **just pass a camera or image entity_id and you'll receive a snapshot of that entity!**
 
 
 # Table of Content <!-- omit in toc -->
@@ -213,7 +213,7 @@ But there are many optional parameters you can use! Please read the following ta
 | `critical_volume`  | iOS | Only on iOS you can specify a volume of `critical` notification sound. If you don't specify this and send a critical notification the iphones_critical_volume value specified in [anchor parameters](#anch]) will be used
 | `url`  | Android / iOS / Pushover / HTML5 | If you specify a value when the user will click the notification this url will be opened. To open a view of your dashboard use the value `"/lovelace/view_path"` where `lovelace` is the name of your dashboard and `view_path` is the path of your view. On Android you can open an app using `"app://<package name>"`, a "more info panel" of an entity with `"entityId:<entity_id>"` or notifycation history with `settings://notification_history`. More info [here](https://companion.home-assistant.io/docs/notifications/notifications-basic#opening-a-url).
 | `app_actions`  | Android / iOS / HTML5 | You can specify a list of actions that users can click and Home Assistant will receive the event. More info on the [Companion app details](#companion-app-details) section.
-| `attachment`  | Android / iOS / Pushover / HTML5 | Specify a relative or absolute url to attach an image, video or audio with the notification (every platform has it's own limits). If you specify the entity id of a camera a snapshot will be attached (in the proper way for each notification platform). More info on the [Companion app details](#companion-app-details) section.
+| `attachment`  | Android / iOS / Pushover / HTML5 | Specify a relative or absolute url to attach an image, video or audio with the notification (every platform has it's own limits). If you specify a camera or image entity id  a snapshot will be attached (in the proper way for each notification platform). More info on the [Companion app details](#companion-app-details) section.
 
 ## Alexa details
 Multinotify simulate an announcment volume in Alexa. To do that the sequence is the following, when you play an announce with multinotify:
@@ -441,8 +441,8 @@ The `attachment` parameter is very powerful. You can specify an attachment of yo
 Here the various possibilities:
 - An absolute url, for example: `https://henriksozzi.it/wp-content/uploads/2020/12/Henrik-Sozzi-small.jpg`. Not every platform supports every type of attachment. For example iOS accepts image (jpg, gif, png), video (mp4, mpg, avi), audio (aiff, wav, mp3) but Android only supports image and video and HTML5 and Pushover only supports image.
 - A relative url. For example: `/local/my_file.jpg` means you have to attach a file located in `/config/www/my_file.jpg`
-- A camera `entity_id`. For example `camera.living_room`. By doing that multinotify will automatically use best method for every platform involved to attach a snapshot of the camera, just as simple as that!
-On iOS, when you enlarge the notification, a live preview of the camera will be shown.
+- A camera or image `entity_id`. For example `camera.living_room` or `image.living_room_snapshot`. By doing that multinotify will automatically use best method for every platform involved to attach a snapshot of the camera, just as simple as that!
+On iOS, for camera entity, when you enlarge the notification, a live preview of the camera will be shown.
 
 ## Critical notifications
 Critical notifications are notification that have more importance like an anti-theft alarm notification or a water leak sensor detected.

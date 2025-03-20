@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------------------
-# Package Multinotify - Ver. 3.8.3
+# Package Multinotify - Ver. 3.8.4
 # Description: multinotify script to handle notifications and announcements using the following services:
 #               - App companion (Android e iOS)
 #               - Pushover
@@ -364,7 +364,7 @@ script:
             title: "Maybe, I don't know"
       attachment:
         name: "Attachment"
-        description: "You can specify a relative or absolute uri of a resource to attach (every platform has its own limits) or the entity_id of a camera to automatically attach a snapshot of that camera [ Android / iOS / Pushover / HTML5 ]"
+        description: "You can specify a relative or absolute uri of a resource to attach (every platform has its own limits) or a camera or image entity_id to automatically attach a snapshot of that entity [ Android / iOS / Pushover / HTML5 ]"
         selector:
           text:
         example: /media/local/file.jpg
@@ -404,6 +404,8 @@ script:
       attachment_image_android: >
         {% if attachment is defined and attachment.startswith("camera.")%}
           {{"/api/camera_proxy/" ~ attachment}}
+        {% elif attachment is defined and attachment.startswith("image.")%}
+          {{"/api/image_proxy/" ~ attachment}}
         {% elif attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
         {% else %}
@@ -412,6 +414,8 @@ script:
       attachment_image_ios: >
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{attachment}}
+        {% elif attachment is defined and attachment.startswith("image.")%}
+          {{"/api/image_proxy/" ~ attachment}}
         {% else %}
           None
         {% endif %}
@@ -427,17 +431,25 @@ script:
         {% else %}
           None
         {% endif %}
+      image_entity: >
+        {% if attachment is defined and attachment.startswith("image.") %}
+          {{attachment}}
+        {% else %}
+          None
+        {% endif %}
       snapshot_filename_pushover: >
         {% if camera_entity is not none %}
-        {# /config/tmp/{{states[camera_entity].name}} {{ now().strftime('%Y%m%d-%H%M%S') }}.jpg #}
           /config/tmp/{{states[camera_entity].name}} snapshot.jpg
+        {% elif image_entity is not none %}
+          /config/tmp/{{states[image_entity].name}} snapshot.jpg
         {% else %}
           None
         {% endif %}
       snapshot_filename_html5: >
         {% if camera_entity is not none %}
-          {# /config/www/cam/{{states[camera_entity].name}} {{ now().strftime('%Y%m%d-%H%M%S') }}.jpg #}
           /config/www/cam/{{states[camera_entity].name}} snapshot.jpg
+        {% elif image_entity is not none %}
+          /config/www/cam/{{states[image_entity].name}} snapshot.jpg
         {% else %}
           None
         {% endif %}
@@ -445,7 +457,7 @@ script:
         {% if attachment is defined and attachment.endswith((".jpg", ".jpeg", ".gif", ".png")) %}
           {{ attachment | replace("/media/local/","/media/") | replace("/local/","/config/www/")}}
         {% elif snapshot_filename_pushover is not none %}
-          {{snapshot_filename_pushover}}?refresh={{ random_str }}
+          {{snapshot_filename_pushover}}
         {% else %}
           None
         {% endif %}
@@ -550,6 +562,14 @@ script:
                   entity_id: "{{camera_entity}}"
                 data:
                   filename: "{{snapshot_filename_pushover}}"
+          - if: "{{image_entity is not none}}"
+            then:
+              - action: image.snapshot
+                continue_on_error: true
+                target:
+                  entity_id: "{{image_entity}}"
+                data:
+                  filename: "{{snapshot_filename_pushover}}"
           - action: "{{notify_pushover}}"
             continue_on_error: true
             data:
@@ -570,6 +590,14 @@ script:
                 continue_on_error: true
                 target:
                   entity_id: "{{camera_entity}}"
+                data:
+                  filename: "{{snapshot_filename_html5}}"
+          - if: "{{image_entity is not none}}"
+            then:
+              - action: image.snapshot
+                continue_on_error: true
+                target:
+                  entity_id: "{{image_entity}}"
                 data:
                   filename: "{{snapshot_filename_html5}}"
           - repeat:

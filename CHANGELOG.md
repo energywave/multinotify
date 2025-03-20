@@ -121,3 +121,7 @@ Please note that before [3.6.1](#ver-361---07092022) version italian language wa
 
 ## Ver. 3.8.3 - 10 Mar 2025
  - **HTML5 and Pushover**: added a unique querystring to camera snapshot to prevent Home Assistant aggressive caching and force to reload the image from webserver
+
+ ## Ver. 3.8.4 - 20 Mar 2025
+  - **Android and iOS app, HTML5 and Pushover**: addedd support for image entity. Now you can specify an image.your_entity in the attachment and that will be sent in the appropriate way for every notification media
+  - **Pushover**: corrected a problem that let not send camera and image entities as attachment
